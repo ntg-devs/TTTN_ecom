@@ -1,0 +1,347 @@
+CREATE DATABASE IF NOT EXISTS my_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE my_database;
+
+CREATE TABLE `Users` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `email` VARCHAR(255),
+  `password` VARCHAR(255),
+  `firstName` VARCHAR(255),
+  `lastName` VARCHAR(255),
+  `address` VARCHAR(255),
+  `genderId` VARCHAR(255),
+  `phonenumber` VARCHAR(255),
+  `image` LONGBLOB,
+  `dob` VARCHAR(255),
+  `isActiveEmail` BOOLEAN,
+  `roleId` VARCHAR(255),
+  `statusId` VARCHAR(255),
+  `usertoken` VARCHAR(255),
+  `is_kol` BOOLEAN,
+  `kol_status` ENUM('pending', 'approved', 'rejected'),
+  `kol_tier` VARCHAR(255),
+  `kol_commission_rate` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+  `total_sales` INT DEFAULT 0,
+  `total_followers` INT,
+  `facebook_link` VARCHAR(255),
+  `instagram_link` VARCHAR(255),
+  `tiktok_link` VARCHAR(255),
+  `youtube_link` VARCHAR(255),
+  `twitter_link` VARCHAR(255),
+  `other_link` VARCHAR(255),
+  `bank_name` VARCHAR(255),
+  `bank_account_number` VARCHAR(255),
+  `bank_account_name` VARCHAR(255),
+  `bank_branch` VARCHAR(255),
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `AddressUsers` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `userId` INT DEFAULT NULL,
+  `shipName` VARCHAR(255) DEFAULT NULL,
+  `shipAdress` VARCHAR(255) DEFAULT NULL,
+  `shipEmail` VARCHAR(255) DEFAULT NULL,
+  `shipPhonenumber` VARCHAR(255) DEFAULT NULL,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  `shipChoose` BOOLEAN NOT NULL DEFAULT FALSE,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `AffiliateClicks` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `linkId` INT NOT NULL,
+  `kolId` INT NOT NULL,
+  `productId` INT NOT NULL,
+  `ipAddress` VARCHAR(50) DEFAULT NULL COMMENT 'Anonymized IP address',
+  `userAgent` TEXT DEFAULT NULL COMMENT 'Browser/device information',
+  `clickedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When the click occurred',
+  `referrerUrl` VARCHAR(255) DEFAULT NULL COMMENT 'Referring URL',
+  `geoLocation` VARCHAR(255) DEFAULT NULL,
+  `converted` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Whether this click led to a conversion',
+  `conversionId` INT DEFAULT NULL COMMENT 'Reference to Order model if converted',
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `AffiliateOrders` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `kolId` INT NOT NULL,
+  `orderId` INT NOT NULL,
+  `productId` INT NOT NULL,
+  `linkId` INT NOT NULL,
+  `revenue` DECIMAL(15,2) NOT NULL,
+  `commission` DECIMAL(15,2) NOT NULL,
+  `commissionRate` DECIMAL(5,2) NOT NULL,
+  `status` ENUM('pending','completed','cancelled') NOT NULL,
+  `confirmedAt` DATETIME DEFAULT NULL,
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Allcodes` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `type` VARCHAR(255),
+  `value` VARCHAR(255),
+  `code` VARCHAR(255),
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Banners` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `description` LONGTEXT,
+  `name` VARCHAR(255),
+  `statusId` VARCHAR(255),
+  `image` LONGBLOB,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Blogs` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `shortdescription` LONGTEXT,
+  `title` VARCHAR(255),
+  `subjectId` VARCHAR(255),
+  `statusId` VARCHAR(255),
+  `image` LONGBLOB,
+  `contentMarkdown` LONGTEXT,
+  `contentHTML` LONGTEXT,
+  `userId` INT,
+  `view` INT,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Comments` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `content` LONGTEXT,
+  `image` LONGBLOB,
+  `parentId` INT DEFAULT NULL,
+  `productId` INT DEFAULT NULL,
+  `userId` INT DEFAULT NULL,
+  `blogId` INT DEFAULT NULL,
+  `star` INT,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `drawkols` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `kolId` INT NOT NULL,
+  `reviewId` INT DEFAULT NULL,
+  `image_bank` LONGBLOB DEFAULT NULL,
+  `amount` DECIMAL(15,2) NOT NULL,
+  `status` ENUM('pending','approved','rejected','completed') NOT NULL DEFAULT 'pending',
+  `bank_account_name` VARCHAR(255) NOT NULL,
+  `bank_account_number` VARCHAR(255) NOT NULL,
+  `bank_name` VARCHAR(255) NOT NULL,
+  `bank_branch` VARCHAR(255) DEFAULT NULL,
+  `withdrawAt` DATETIME DEFAULT NULL,
+  `note` VARCHAR(255) DEFAULT NULL,
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`kolId`) REFERENCES `Users`(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  FOREIGN KEY (`reviewId`) REFERENCES `Users`(`id`) ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+CREATE TABLE `KolRequests` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `userId` INT NOT NULL,
+  `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+  `reason` TEXT DEFAULT NULL,
+  `socialMediaLinks` JSON DEFAULT NULL COMMENT 'JSON object containing social media profile links',
+  `identificationDocument` JSON DEFAULT NULL COMMENT 'JSON object containing ID verification details',
+  `reviewedBy` INT DEFAULT NULL COMMENT 'Staff user ID who reviewed the application',
+  `reviewDate` DATETIME DEFAULT NULL,
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Messages` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `text` LONGTEXT,
+  `userId` INT,
+  `roomId` INT,
+  `unRead` BOOLEAN,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Orderdetails` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `orderId` INT,
+  `productId` INT,
+  `quantity` INT,
+  `realPrice` BIGINT,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Orderproducts` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `addressUserId` INT,
+  `shipperId` INT,
+  `statusId` VARCHAR(255),
+  `typeShipId` INT,
+  `voucherId` INT,
+  `note` VARCHAR(255),
+  `isPaymentOnlien` INT,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  `image` LONGBLOB,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Products` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(255),
+  `contentHTML` LONGTEXT,
+  `contentMarkdown` LONGTEXT,
+  `statusId` VARCHAR(255),
+  `categoryId` VARCHAR(255),
+  `view` INT,
+  `madeby` VARCHAR(255),
+  `material` VARCHAR(255),
+  `brandId` VARCHAR(255),
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Productdetails` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `productId` INT,
+  `description` LONGTEXT,
+  `nameDetail` VARCHAR(255),
+  `originalPrice` BIGINT,
+  `discountPrice` BIGINT,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `ProductDetailSizes` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `productdetailId` INT,
+  `width` VARCHAR(255),
+  `height` VARCHAR(255),
+  `weight` VARCHAR(255),
+  `sizeId` VARCHAR(255),
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Productimages` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `caption` VARCHAR(255),
+  `productdetailId` INT,
+  `image` LONGBLOB,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Receipts` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `userId` INT,
+  `supplierId` INT,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `ReceiptDetails` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `receiptId` INT,
+  `productDetailSizeId` INT,
+  `quantity` INT,
+  `price` BIGINT,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `RoomMessages` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `userOne` INT,
+  `userTwo` INT,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Shopcarts` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `userId` INT,
+  `productdetailsizeId` INT,
+  `quantity` INT,
+  `statusId` VARCHAR(255),
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Suppliers` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(255),
+  `address` VARCHAR(255),
+  `phonenumber` VARCHAR(255),
+  `email` VARCHAR(255),
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Typeships` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `type` VARCHAR(255),
+  `price` BIGINT,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Typevouchers` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `typeVoucher` VARCHAR(255),
+  `value` BIGINT,
+  `maxValue` BIGINT,
+  `minValue` BIGINT,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Vouchers` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `fromDate` VARCHAR(255),
+  `toDate` VARCHAR(255),
+  `typeVoucherId` INT,
+  `amount` INT,
+  `codeVoucher` VARCHAR(255),
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `Voucheruseds` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `voucherId` INT NOT NULL,
+  `userId` INT NOT NULL,
+  `status` INT NOT NULL DEFAULT 0,
+  `createdAt` DATETIME NOT NULL,
+  `updatedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`id`)
+);
