@@ -180,7 +180,7 @@ const LoginWebPage = () => {
                             {/* Brand Box */}
                             <div className="col-sm-6 brand">
                                 <a href="#" className="logo">
-                                   
+
                                 </a>
                                 <div className="heading">
                                     <img style={{ width: "100%" }} src="/resources/img/logo_cloth3-rm.png" alt="" />
@@ -232,10 +232,10 @@ const LoginWebPage = () => {
                                                 }}
                                                 className="switch"
                                             >
-                                                Tài khoản mới
+                                                Đăng ký
                                             </a>
                                         </div>
-                                        <FacebookLoginButton
+                                        {/* <FacebookLoginButton
                                             text="Đăng nhập với Facebook"
                                             iconSize="25px"
                                             style={{
@@ -247,17 +247,24 @@ const LoginWebPage = () => {
 
                                             }}
                                             onClick={() => signInwithFacebook()}
-                                        />
+                                        /> */}
                                         <GoogleLoginButton
                                             text="Đăng nhập với Google"
                                             iconSize="25px"
                                             style={{
                                                 width: "300px",
+                                                marginTop: "40px",
                                                 height: "40px",
                                                 fontSize: "16px",
                                             }}
                                             onClick={() => signInwithGoogle()}
                                         />
+                                        <a
+                                            href="/kol-registration"
+                                            className="kol-register-btn"
+                                        >
+                                            Đăng ký thành KOL
+                                        </a>
                                     </form>
                                 </div>
                                 {/* End Login Form */}
@@ -339,7 +346,7 @@ const LoginWebPage = () => {
                                             <input
                                                 onClick={() => handleSaveUser()}
                                                 type="submit"
-                                                value="Lưu"
+                                                value="Đăng ký"
                                                 id="submit"
                                             />
                                             <a
@@ -348,7 +355,7 @@ const LoginWebPage = () => {
                                                 }}
                                                 className="switch"
                                             >
-                                                Tôi có tài khoản
+                                                Đăng nhập
                                             </a>
                                         </div>
                                     </form>

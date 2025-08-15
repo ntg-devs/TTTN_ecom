@@ -58,9 +58,9 @@ const KolApplicationDetail = () => {
 
         try {
             setProcessing(true);
-            const response = await approveKolApplication(id, { 
-                reason: approvalReason, 
-                total_followers: parseInt(totalFollowers) 
+            const response = await approveKolApplication(id, {
+                reason: approvalReason,
+                total_followers: parseInt(totalFollowers)
             });
 
             if (response && response.errCode === 0) {
@@ -128,7 +128,7 @@ const KolApplicationDetail = () => {
 
     // Render social media links
     const renderSocialMediaLinks = (links) => {
-        if (!links) return <p>No social media links provided</p>;
+        if (!links) return <p>Không cung cấp liên kết mạng xã hội</p>;
 
         // Parse JSON string if needed
         let parsedLinks;
@@ -136,11 +136,11 @@ const KolApplicationDetail = () => {
             parsedLinks = typeof links === 'string' ? JSON.parse(links) : links;
         } catch (error) {
             console.error('Error parsing social media links:', error);
-            return <p>Error parsing social media links</p>;
+            return <p>Lỗi khi phân tích liên kết mạng xã hội</p>;
         }
 
         if (!parsedLinks || Object.keys(parsedLinks).length === 0) {
-            return <p>No social media links provided</p>;
+            return <p>Không cung cấp liên kết mạng xã hội</p>;
         }
 
         return (
@@ -198,49 +198,7 @@ const KolApplicationDetail = () => {
     };
 
     // Render identification document
-    const renderIdentificationDocument = (document) => {
-        if (!document) return <p>No identification document provided</p>;
 
-        // Parse JSON string if needed
-        let parsedDocument;
-        try {
-            parsedDocument = typeof document === 'string' ? JSON.parse(document) : document;
-        } catch (error) {
-            console.error('Error parsing identification document:', error);
-            return <p>Error parsing identification document</p>;
-        }
-
-        if (!parsedDocument) return <p>No identification document provided</p>;
-
-        const documentTypeLabels = {
-            'nationalId': 'Chứng Minh Nhân Dân',
-            'passport': 'Hộ Chiếu',
-            'driverLicense': 'Giấy Phép Lái Xe'
-        };
-
-        return (
-            <div className="card">
-                <div className="card-body">
-                    <h6 className="card-subtitle mb-2 text-muted">Document Details</h6>
-                    <p><strong>Type:</strong> {documentTypeLabels[parsedDocument.documentType] || parsedDocument.documentType}</p>
-                    <p><strong>Number:</strong> {parsedDocument.documentNumber}</p>
-                    
-                    {parsedDocument.documentImage && (
-                        <div className="mt-3">
-                            <h6>Document Image</h6>
-                            <div className="document-image-container">
-                                <img 
-                                    src={parsedDocument.documentImage} 
-                                    alt="Identification Document" 
-                                    className="img-fluid document-image"
-                                />
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    };
 
     // Render approve modal
     const renderApproveModal = () => {
@@ -259,13 +217,13 @@ const KolApplicationDetail = () => {
                         </div>
                         <div className="modal-body">
                             <p>Please provide the following information to approve this KOL application:</p>
-                            
+
                             <div className="form-group mb-3">
                                 <label htmlFor="approvalReason" className="form-label">Approval Reason *</label>
-                                <textarea 
+                                <textarea
                                     id="approvalReason"
-                                    className="form-control" 
-                                    rows="3" 
+                                    className="form-control"
+                                    rows="3"
                                     value={approvalReason}
                                     onChange={(e) => setApprovalReason(e.target.value)}
                                     placeholder="Enter approval reason..."
@@ -276,10 +234,10 @@ const KolApplicationDetail = () => {
 
                             <div className="form-group mb-3">
                                 <label htmlFor="totalFollowers" className="form-label">Total Followers *</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     id="totalFollowers"
-                                    className="form-control" 
+                                    className="form-control"
                                     value={displayTotalFollowers}
                                     onChange={(e) => {
                                         const value = e.target.value.replace(/,/g, '');
@@ -330,9 +288,9 @@ const KolApplicationDetail = () => {
                         <div className="modal-body">
                             <p>Please provide a reason for rejecting this application:</p>
                             <div className="form-group">
-                                <textarea 
-                                    className="form-control" 
-                                    rows="4" 
+                                <textarea
+                                    className="form-control"
+                                    rows="4"
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
                                     placeholder="Enter rejection reason..."
@@ -367,8 +325,8 @@ const KolApplicationDetail = () => {
 
     return (
         <div className="container-fluid px-4">
-            <h1 className="mt-4">KOL Application Details</h1>
-            <ol className="breadcrumb mb-4">
+            <h1 className="mt-4">Chi tiết KOL</h1>
+            {/* <ol className="breadcrumb mb-4">
                 <li className="breadcrumb-item">
                     <Link to="/admin">Dashboard</Link>
                 </li>
@@ -376,83 +334,83 @@ const KolApplicationDetail = () => {
                     <Link to="/admin/kol/applications">KOL Applications</Link>
                 </li>
                 <li className="breadcrumb-item active">Application Details</li>
-            </ol>
-            
+            </ol> */}
+
             {loading ? (
                 <div className="text-center my-5">
                     <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
+                        <span className="visually-hidden">Đang tải...</span>
                     </div>
                 </div>
             ) : !application ? (
                 <div className="alert alert-danger">
-                    Application not found or you don't have permission to view it.
+                    Không tìm thấy ứng dụng hoặc bạn không có quyền xem ứng dụng.
                 </div>
             ) : (
                 <>
                     {/* Action Buttons */}
                     <div className="mb-4">
                         <Link to="/admin/kol/applications" className="btn btn-secondary me-2">
-                            <i className="fas fa-arrow-left me-1"></i> Back to List
+                            <i className="fas fa-arrow-left me-1"></i> Quay lại
                         </Link>
-                        
+
                         {application.status === 'pending' && (
                             <>
-                                <button 
-                                    className="btn btn-success me-2" 
+                                <button
+                                    className="btn btn-success me-2"
                                     onClick={() => setShowApproveModal(true)}
                                 >
-                                    <i className="fas fa-check me-1"></i> Approve
+                                    <i className="fas fa-check me-1"></i> Phê duyệt
                                 </button>
-                                <button 
-                                    className="btn btn-danger" 
+                                <button
+                                    className="btn btn-danger"
                                     onClick={() => setShowRejectModal(true)}
                                 >
-                                    <i className="fas fa-times me-1"></i> Reject
+                                    <i className="fas fa-times me-1"></i> Từ chối
                                 </button>
                             </>
                         )}
                     </div>
-                    
+
                     {/* Application Status */}
                     <div className="card mb-4">
                         <div className="card-header">
                             <i className="fas fa-info-circle me-1"></i>
-                            Application Status
+                            Trạng thái KOL
                         </div>
                         <div className="card-body">
                             <div className="row">
                                 <div className="col-md-6">
-                                    <p><strong>Status:</strong> <span className={getStatusBadgeClass(application.status)}>{application.status.charAt(0).toUpperCase() + application.status.slice(1)}</span></p>
-                                    <p><strong>Application Date:</strong> {formatDate(application.createdAt)}</p>
+                                    <p><strong>Trạng thái:</strong> <span className={getStatusBadgeClass(application.status)}>{application.status.charAt(0).toUpperCase() + application.status.slice(1)}</span></p>
+                                    <p><strong>Ngày nộp đơn:</strong> {formatDate(application.createdAt)}</p>
                                     {application.reviewDate && (
-                                        <p><strong>Review Date:</strong> {formatDate(application.reviewDate)}</p>
+                                        <p><strong>Ngày đánh giá:</strong> {formatDate(application.reviewDate)}</p>
                                     )}
                                 </div>
                                 <div className="col-md-6">
                                     {application.status === 'rejected' && application.reason && (
                                         <div className="alert alert-danger">
-                                            <strong>Rejection Reason:</strong> {application.reason}
+                                            <strong>Lý do:</strong> {application.reason}
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     {/* User Information */}
                     {user && (
                         <div className="card mb-4">
                             <div className="card-header">
                                 <i className="fas fa-user me-1"></i>
-                                User Information
+                                Thông tin người dùng
                             </div>
                             <div className="card-body">
                                 <div className="row">
                                     <div className="col-md-2">
                                         {user.image ? (
-                                            <img 
-                                                src={user.image} 
+                                            <img
+                                                src={user.image}
                                                 alt={`${user.firstName} ${user.lastName}`}
                                                 className="img-fluid rounded user-profile-image"
                                             />
@@ -465,14 +423,14 @@ const KolApplicationDetail = () => {
                                     <div className="col-md-10">
                                         <h4>{user.firstName} {user.lastName}</h4>
                                         <p><strong>Email:</strong> {user.email}</p>
-                                        <p><strong>Phone:</strong> {user.phoneNumber || 'N/A'}</p>
-                                        <p><strong>KOL Status:</strong> {user.kolStatus || 'N/A'}</p>
+                                        <p><strong>Điện thoại:</strong> {user.phoneNumber || 'N/A'}</p>
+                                        <p><strong>Trạng thái KOL:</strong> {user.kolStatus || 'N/A'}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     )}
-                    
+
                     {/* Application Details */}
                     <div className="row">
                         {/* Social Media Links */}
@@ -480,16 +438,16 @@ const KolApplicationDetail = () => {
                             <div className="card mb-4">
                                 <div className="card-header">
                                     <i className="fas fa-share-alt me-1"></i>
-                                    Social Media Links
+                                    Liên kết mạng xã hội
                                 </div>
                                 <div className="card-body">
                                     {renderSocialMediaLinks(application.socialMediaLinks)}
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Identification Document */}
-                        <div className="col-md-6">
+                        {/* <div className="col-md-6">
                             <div className="card mb-4">
                                 <div className="card-header">
                                     <i className="fas fa-id-card me-1"></i>
@@ -499,11 +457,11 @@ const KolApplicationDetail = () => {
                                     {renderIdentificationDocument(application.identificationDocument)}
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </>
             )}
-            
+
             {/* Modals */}
             {renderApproveModal()}
             {renderRejectModal()}

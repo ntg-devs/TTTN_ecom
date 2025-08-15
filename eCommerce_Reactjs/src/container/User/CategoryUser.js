@@ -50,7 +50,7 @@ function CategoryUser(props) {
                         Kho voucher
                     </Link>
                 </li>
-                <li>
+                {/* <li>
                     <img
                         width="20px"
                         height="20px"
@@ -60,7 +60,7 @@ function CategoryUser(props) {
                     <Link to={`/user/kol-registration/${props.id}`}>
                         Đăng kí KOL
                     </Link>
-                </li>
+                </li> */}
             </ul>
         </div>
     );

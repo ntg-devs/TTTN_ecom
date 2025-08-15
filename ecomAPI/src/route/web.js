@@ -185,9 +185,9 @@ let initwebRoutes = (app) => {
     router.put('/api/update-receipt', middlewareControllers.verifyTokenAdmin, receiptController.updateReceipt)
     router.delete('/api/delete-receipt', middlewareControllers.verifyTokenAdmin, receiptController.deleteReceipt)
     router.post('/api/create-new-detail-receipt', middlewareControllers.verifyTokenAdmin, receiptController.createNewReceiptDetail)
-    
+
     //=================API KOL====================================//
-    router.post('/api/kol/register', middlewareControllers.verifyTokenUser, kolController.handleKolRegistration)
+    router.post('/api/kol/register', kolController.handleKolRegistration)
     router.get('/api/kol/status', middlewareControllers.verifyTokenUser, kolController.getApplicationStatus)
     router.get('/api/admin/kol/applications', middlewareControllers.verifyTokenAdmin, kolController.getAllApplications)
     router.get('/api/admin/kol/applications/:id', middlewareControllers.verifyTokenAdmin, kolController.getApplicationDetails)
@@ -198,7 +198,7 @@ let initwebRoutes = (app) => {
     router.post('/api/kol/create-draw', middlewareControllers.verifyTokenUser, kolController.handleWithCreateDrawMoneyKOL)
     router.get('/api/kol/get-all-draw', middlewareControllers.verifyTokenAdmin, kolController.handleGetAllDrawKOL)
     router.get('/api/kol/get-all-draw-by-kol', middlewareControllers.verifyTokenUser, kolController.handleGetAllRequestDrawByKOL)
-    
+
     //=================API KOL TIER MANAGEMENT===================//
     router.post('/api/admin/kol/tier/update', middlewareControllers.verifyTokenAdmin, kolTierController.updateKolTier)
     router.post('/api/admin/kol/tier/recalculate-all', middlewareControllers.verifyTokenAdmin, kolTierController.recalculateAllTiers)
@@ -207,7 +207,7 @@ let initwebRoutes = (app) => {
     router.post('/api/admin/kol/tier/trigger-scheduled', middlewareControllers.verifyTokenAdmin, kolTierController.triggerScheduledRecalculation)
     router.get('/api/admin/kol/tier/scheduler-status', middlewareControllers.verifyTokenAdmin, kolTierController.getSchedulerStatus)
     router.get('/api/kol/tier/info/:kolId', middlewareControllers.verifyTokenUser, kolTierController.getKolTierInfo)
-    
+
     //=================API AFFILIATE================================//
     router.post('/api/affiliate/links', middlewareControllers.verifyTokenUser, affiliateController.generateAffiliateLink)
     router.get('/api/affiliate/links', middlewareControllers.verifyTokenUser, affiliateController.getAffiliateLinks)
@@ -229,8 +229,8 @@ let initwebRoutes = (app) => {
     router.get('/api/affiliate/export-kol-performance', middlewareControllers.verifyTokenAdmin, dataExportController.exportKolPerformance);
     router.get('/api/affiliate/realtime-stats', middlewareControllers.verifyTokenUser, realtimeStatsService.getRealtimeUpdates);
     router.post('/api/affiliate/realtime_access', middlewareControllers.verifyTokenUser, affiliateLinkController.handleAccessAffilateLink);
-    
-    
+
+
     return app.use("/", router);
 }
 

@@ -1,6 +1,9 @@
 import db from "../models/index";
+import bcrypt from "bcryptjs";
+import { v4 as uuidv4 } from 'uuid';
 import emailService from "./emailService";
 const { Op } = require("sequelize");
+const salt = bcrypt.genSaltSync(10);
 
 // KOL Tier Configuration
 const KOL_TIERS = {
@@ -20,6 +23,17 @@ const KOL_TIERS = {
     commissionRate: 3.0,
   },
 };
+
+let hashUserPasswordFromBcrypt = (password) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let hashPassword = await bcrypt.hashSync(password, salt);
+      resolve(hashPassword);
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
 
 // Email Templates
 const EMAIL_TEMPLATES = {
@@ -231,13 +245,13 @@ const kolService = {
             reviewDate: app.reviewDate,
             user: user
               ? {
-                  id: user.id,
-                  email: user.email,
-                  firstName: user.firstName,
-                  lastName: user.lastName,
-                  phoneNumber: user.phoneNumber,
-                  image: userImage,
-                }
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                phoneNumber: user.phoneNumber,
+                image: userImage,
+              }
               : null,
           };
         })
@@ -365,12 +379,35 @@ const kolService = {
    */
   registerKol: async (data) => {
     try {
-      const { userId, socialMediaLinks, identificationDocument } = data;
+      const { socialMediaLinks,
+        fullName,
+        email,
+        password,
+        dob,
+        gender,
+        phone
+      } = data;
+      let hashPassword = await hashUserPasswordFromBcrypt(password);
 
-      // Check if user exists
-      const user = await db.User.findOne({
-        where: { id: userId },
-      });
+      const user = await db.User.create({
+        email: email,
+        password: hashPassword,
+        lastName: fullName,
+        roleId: 'R2',
+        genderId: gender,
+        phonenumber: phone,
+        dob: null,
+        isActiveEmail: 0,
+        statusId: 'S1',
+        usertoken: '',
+      })
+
+      // // Check if user exists
+      // const user = await db.User.findOne({
+      //   where: { id: userId },
+      // });
+
+
 
       if (!user) {
         return {
@@ -382,7 +419,7 @@ const kolService = {
       // Check if user already has a pending or approved KOL request
       const existingRequest = await db.KolRequest.findOne({
         where: {
-          userId: userId,
+          userId: user.id,
           status: {
             [Op.in]: ["pending", "approved"],
           },
@@ -401,10 +438,10 @@ const kolService = {
 
       // Create new KOL request
       const newKolRequest = await db.KolRequest.create({
-        userId: userId,
+        userId: user.id,
         status: "pending",
         socialMediaLinks: socialMediaLinks,
-        identificationDocument: identificationDocument,
+        identificationDocument: "",
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -421,7 +458,9 @@ const kolService = {
           other_link: socialMediaLinks.other || null,
         },
         {
-          where: { id: userId },
+          where: {
+            id: user.id
+          },
         }
       );
 
@@ -794,27 +833,27 @@ const kolService = {
       };
     }
   },
- getAllRequestDrawByKOL: async (kolId) => {
-  try {
-    const allDrawKOL = await db.drawkol.findAll({
-      where: { kolId },
-      order: [['createdAt', 'DESC']], // lấy mới nhất trước, tùy chọn
-    });
+  getAllRequestDrawByKOL: async (kolId) => {
+    try {
+      const allDrawKOL = await db.drawkol.findAll({
+        where: { kolId },
+        order: [['createdAt', 'DESC']], // lấy mới nhất trước, tùy chọn
+      });
 
-    return {
-      errCode: 0,
-      errMessage: "Lấy danh sách yêu cầu rút tiền thành công",
-      data: allDrawKOL,
-    };
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách yêu cầu rút tiền:", error);
-    return {
-      errCode: 1,
-      errMessage: "Lỗi server khi lấy danh sách yêu cầu rút tiền",
-      error,
-    };
-  }
-},
+      return {
+        errCode: 0,
+        errMessage: "Lấy danh sách yêu cầu rút tiền thành công",
+        data: allDrawKOL,
+      };
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách yêu cầu rút tiền:", error);
+      return {
+        errCode: 1,
+        errMessage: "Lỗi server khi lấy danh sách yêu cầu rút tiền",
+        error,
+      };
+    }
+  },
 
   updateDrawKOL: async function (req, res) {
     try {

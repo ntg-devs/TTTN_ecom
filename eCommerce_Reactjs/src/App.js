@@ -147,7 +147,7 @@ function App() {
                     element={
                         <>
                             <Header />
-                            <About/>
+                            <About />
                             <Footer />
                         </>
                     }
@@ -163,7 +163,7 @@ function App() {
                     }
                 />
                 <Route
-                    path="kol-registration/:id"
+                    path="/kol-registration"
                     element={<KolRegistrationForm />}
                 />
                 <Route
@@ -198,10 +198,10 @@ function App() {
                     path="/admin/*"
                     element={
                         JSON.parse(localStorage.getItem("userData")) &&
-                        (JSON.parse(localStorage.getItem("userData")).roleId ===
-                            "R1" ||
-                            JSON.parse(localStorage.getItem("userData"))
-                                .roleId === "R4") ? (
+                            (JSON.parse(localStorage.getItem("userData")).roleId ===
+                                "R1" ||
+                                JSON.parse(localStorage.getItem("userData"))
+                                    .roleId === "R4") ? (
                             <HomePageAdmin />
                         ) : (
                             <Navigate to="/login" />
