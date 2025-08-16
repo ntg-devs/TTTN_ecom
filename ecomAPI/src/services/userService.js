@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import emailService from "./emailService";
 import { v4 as uuidv4 } from 'uuid';
 import CommonUtils from '../utils/CommonUtils';
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 require('dotenv').config();
 const salt = bcrypt.genSaltSync(10);
 
@@ -26,13 +26,21 @@ let hashUserPasswordFromBcrypt = (password) => {
 let checkUserEmail = (userEmail) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let user = await db.User.findOne({
-                where: { email: userEmail }
-            })
-            if (user) {
-                resolve(true)
+            const accounts = await db.Account.findAll({
+                where: { email: userEmail },
+                include: [{
+                    model: db.AccountRole
+                }]
+            });
+            const hasRole3 = accounts.some(acc =>
+                Array.isArray(acc.AccountRoles) &&
+                acc.AccountRoles.some(r => r.roleId === 3)
+            );
+
+            if (hasRole3) {
+                resolve(true);
             } else {
-                resolve(false)
+                resolve(false);
             }
         } catch (error) {
             reject(error)
@@ -56,21 +64,24 @@ let handleCreateNewUser = (data) => {
                     })
                 } else {
                     let hashPassword = await hashUserPasswordFromBcrypt(data.password);
-                    await db.User.create({
+
+                    const account = await db.Account.create({
                         email: data.email,
                         password: hashPassword,
-                        firstName: data.firstName,
-                        lastName: data.lastName,
-                        address: data.address,
-                        roleId: data.roleId,
-                        genderId: data.genderId,
-                        phonenumber: data.phonenumber,
-                        image: data.avatar,
-                        dob: data.dob,
-                        isActiveEmail: 0,
-                        statusId: 'S1',
-                        usertoken: '',
                     })
+                    await db.AccountRole.create({
+                        accountId: account.accountId,
+                        roleId: 3
+                    })
+                    console.log(account.accountId);
+                    await db.Customer.create({
+                        accountId: account.accountId,
+                        fullName: data.lastName,
+                        dateOfBirth: data.dob,
+                        gender: data.gender || null,
+                        phone: data.phonenumber || null
+                    })
+
                     resolve({
                         errCode: 0,
                         message: 'OK'
@@ -175,37 +186,70 @@ let handleLogin = (data) => {
             else {
                 let userData = {};
 
-                let isExist = await checkUserEmail(data.email);
+                const accounts = await db.Account.findAll({
+                    where: { email: data.email },
+                });
+                if (accounts) {
+                    let check = await bcrypt.compareSync(data.password, accounts[0].password);
+                    if (check) {
+                        userData.errCode = 0;
+                        userData.errMessage = 'Ok';
 
-                if (isExist === true) {
-                    let user = await db.User.findOne({
-                        attributes: ['email', 'roleId', 'password', 'firstName', 'lastName', 'id'],
-                        where: { email: data.email, statusId: 'S1' },
-                        raw: true
-                    })
-                    if (user) {
-                        let check = await bcrypt.compareSync(data.password, user.password);
-                        if (check) {
-                            userData.errCode = 0;
-                            userData.errMessage = 'Ok';
+                        delete accounts[0].password;
 
-                            delete user.password;
 
-                            userData.user = user;
-                            userData.accessToken = CommonUtils.encodeToken(user.id)
-                        } else {
-                            userData.errCode = 3;
-
-                            userData.errMessage = 'Wrong password';
-                        }
+                        userData.accessToken = CommonUtils.encodeToken(accounts[0].accountId)
                     } else {
-                        userData.errCode = 2;
-                        userData.errMessage = 'User not found!'
+                        userData.errCode = 3;
+
+                        userData.errMessage = 'Wrong password';
                     }
-                } else {
-                    userData.errCode = 1;
-                    userData.errMessage = `Your's email isn't exist in your system. plz try other email`
                 }
+
+
+
+                if (accounts[0].isActive === 0) {
+                    resolve({
+                        errCode: 5,
+                        errMessage: 'Bi cam'
+                    })
+                }
+                const role = await db.AccountRole.findAll({
+                    where: { accountId: accounts[0].accountId },
+                })
+
+
+                console.log("accounts", role)
+
+                for (let i = 0; i < role.length; i++) {
+
+                    if (role[i].roleId === 3) {
+                        userData.user = await db.Customer.findOne({
+                            attributes: ['full_name', 'date_of_birth', 'gender', 'phone'],
+                            where: { accountId: accounts[0].accountId },
+                            raw: true
+                        })
+                        userData.user.roleId = role[i].roleId;
+                    }
+                    else if (role[i].roleId === 4) {
+                        userData.user = await db.KolInfo.findOne({
+                            attributes: ['full_name', 'date_of_birth', 'gender', 'phone'],
+                            where: { accountId: accounts[0].accountId },
+                            raw: true
+                        })
+                        userData.user.roleId = role[i].roleId;
+                    }
+                    else if (role[i].roleId === 1 || role[i].roleId === 2) {
+                        userData.user = await db.Employee.findOne({
+                            attributes: ['full_name', 'date_of_birth', 'gender', 'phone'],
+                            where: { accountId: accounts[0].accountId },
+                            raw: true
+                        })
+                        userData.user.roleId = role[i].roleId;
+                    }
+                }
+
+                console.log("userData", userData)
                 resolve(userData)
             }
 
@@ -517,24 +561,21 @@ let handleForgotPassword = (data) => {
 let checkPhonenumberEmail = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let phone = await db.User.findOne({
-                where: { phonenumber: data.phonenumber }
-            })
-            let email = await db.User.findOne({
-                where: { email: data.email }
-            })
-            if (phone) {
-                resolve({
-                    isCheck: true,
-                    errMessage: "Số điện thoại đã tồn tại"
-                })
-            }
-            if (email) {
-                resolve({
-                    isCheck: true,
-                    errMessage: "Email đã tồn tại"
-                })
-            }
+            // let email = await db.Account.findOne({
+            //     where: { email: data.email }
+            // })
+            // if (phone) {
+            //     resolve({
+            //         isCheck: true,
+            //         errMessage: "Số điện thoại đã tồn tại"
+            //     })
+            // }
+            // if (email) {
+            //     resolve({
+            //         isCheck: true,
+            //         errMessage: "Email đã tồn tại"
+            //     })
+            // }
 
             resolve({
                 isCheck: false,

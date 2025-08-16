@@ -42,10 +42,12 @@ const LoginWebPage = () => {
             password: inputValues.password,
         });
 
+        console.log("dtaa", res)
+
         if (res && res.errCode === 0) {
             localStorage.setItem("userData", JSON.stringify(res.user));
             localStorage.setItem("token", JSON.stringify(res.accessToken));
-            if (res.user.roleId === "R1" || res.user.roleId === "R4") {
+            if (res.user.roleId === 1 || res.user.roleId === 2) {
                 window.location.href = "/admin";
             } else {
                 window.location.href = "/";
@@ -90,6 +92,7 @@ const LoginWebPage = () => {
             toast.error(res.errMessage);
         } else {
             const { email, lastName, password, phonenumber } = inputValues;
+
             let res = await createNewUser({
                 email,
                 lastName,

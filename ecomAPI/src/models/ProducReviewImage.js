@@ -2,13 +2,14 @@
 const { Model } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  class ProductImage extends Model {
+  class ProductReviewImage extends Model {
     static associate(models) {
-      ProductImage.belongsTo(models.Product, { foreignKey: "productId" });
+      ProductReviewImage.belongsTo(models.ProductReview, {
+        foreignKey: "reviewId",
+      });
     }
   }
-
-  ProductImage.init(
+  ProductReviewImage.init(
     {
       imageId: {
         type: DataTypes.INTEGER,
@@ -16,17 +17,16 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
         field: "image_id",
       },
-      productId: {
+      reviewId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        field: "product_id",
+        field: "review_id",
       },
       image: {
         type: DataTypes.BLOB("long"), // thay cho LONGBLOB
         allowNull: true,
         field: "image",
       },
-      description: { type: DataTypes.TEXT, allowNull: true },
       createdAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
@@ -40,13 +40,12 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: "ProductImage",
-      tableName: "product_image",
+      modelName: "ProductReviewImage",
+      tableName: "product_review_image",
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",
     }
   );
-
-  return ProductImage;
+  return ProductReviewImage;
 };

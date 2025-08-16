@@ -145,7 +145,7 @@ const Home = () => {
     let res = await getDataForChartsAdmin();
     setdataChart(res.data);
 
-    console.log("Test",  res.data)
+    console.log("Test", res.data)
   };
 
   let handleOnclick = () => {
@@ -180,7 +180,7 @@ const Home = () => {
       <ol className="breadcrumb mb-4">
         <li
           onClick={() => setactiveKOL(false)}
-         className={`breadcrumb-item cursor-pointer ${!activeKOL ? 'active text-primary' : ''}`}
+          className={`breadcrumb-item cursor-pointer ${!activeKOL ? 'active text-primary' : ''}`}
           style={{ cursor: 'pointer' }}
         >
           Trang Sản phẩm
@@ -188,7 +188,7 @@ const Home = () => {
         <li
           onClick={() => setactiveKOL(true)}
           className={`breadcrumb-item cursor-pointer ${activeKOL ? 'active text-primary' : ''}`}
-           style={{ cursor: 'pointer' }}  
+          style={{ cursor: 'pointer' }}
         >
           Trang KOL
         </li>

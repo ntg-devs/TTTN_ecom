@@ -26,7 +26,7 @@ const SideBar = () => {
                         </Link>
 
                         <div className="sb-sidenav-menu-heading">Quản lý</div>
-                        {user && user.roleId === "R1" &&
+                        {user && user.roleId === 1 &&
                             <>
                                 <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
                                     <div className="sb-nav-link-icon"><i className="fas fa-users"></i></div>
@@ -176,7 +176,7 @@ const SideBar = () => {
                                 <Link to={'/admin/chat'} className="nav-link" >Messenger</Link>
                             </nav>
                         </div>
-                        
+
                         <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseKOL" aria-expanded="false" aria-controls="collapseLayouts">
                             <div className="sb-nav-link-icon"><i className="fas fa-users-cog"></i></div>
                             Quản lý KOL
@@ -190,7 +190,7 @@ const SideBar = () => {
                                 <Link to={'/admin/kol/withdraw'} className="nav-link">Rút tiền KOL</Link>
                             </nav>
                         </div>
-                        {user && user.roleId === "R1" &&
+                        {user && user.roleId === 1 &&
                             <>
                                 <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseStatistic" aria-expanded="false" aria-controls="collapseLayouts">
                                     <div className="sb-nav-link-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
