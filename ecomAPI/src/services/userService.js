@@ -39,6 +39,7 @@ let checkUserEmail = (userEmail) => {
         }
     })
 }
+//create new user
 let handleCreateNewUser = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
