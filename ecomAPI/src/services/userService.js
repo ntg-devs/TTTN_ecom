@@ -273,7 +273,7 @@ let handleLogin = (data) => {
 
                     if (role[i].roleId === 3) {
                         userData.user = await db.Customer.findOne({
-                            attributes: ['full_name', 'date_of_birth', 'gender', 'phone'],
+                            attributes: ['full_name', 'date_of_birth', 'gender', 'phone', 'customerId'],
                             where: { accountId: accounts[0].accountId },
                             raw: true
                         })

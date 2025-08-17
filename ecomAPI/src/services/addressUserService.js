@@ -4,30 +4,30 @@ import db from "../models/index";
 let createNewAddressUser = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!data.userId) {
+            console.log("data", data);
+            if (!data.userId || !data.shipName || !data.shipPhonenumber || !data.shipAdress) {
                 resolve({
                     errCode: 1,
-                    errMessage: 'Missing required parameter !'
-                })
+                    errMessage: 'Missing required parameters!'
+                });
             } else {
-                await db.AddressUser.create({
-                    userId: data.userId,
-                    shipName: data.shipName,
-                    shipAdress: data.shipAdress,
-                    shipEmail: data.shipEmail,
-                    shipPhonenumber: data.shipPhonenumber,
-                    shipChoose: 1
-                })
+                await db.ShippingAddress.create({
+                    customerId: data.userId,
+                    receiverName: data.shipName,
+                    receiverPhone: data.shipPhonenumber,
+                    addressText: data.shipAdress,
+                    isDefault: true
+                });
                 resolve({
                     errCode: 0,
                     errMessage: 'ok'
-                })
+                });
             }
         } catch (error) {
-            reject(error)
+            reject(error);
         }
-    })
-}
+    });
+};
 let getAllAddressUserByUserId = (userId) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -37,8 +37,8 @@ let getAllAddressUserByUserId = (userId) => {
                     errMessage: 'Missing required parameter !'
                 })
             } else {
-                let res = await db.AddressUser.findAll({
-                    where: { userId: userId }
+                let res = await db.ShippingAddress.findAll({
+                    where: { customerId: userId }
 
                 })
                 resolve({

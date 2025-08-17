@@ -7,6 +7,7 @@ module.exports = (sequelize, DataTypes) => {
       Product.belongsTo(models.Category, { foreignKey: 'categoryId' });
       Product.hasMany(models.ProductSize, { foreignKey: 'productId' });
       Product.hasMany(models.AffiliateLink, { foreignKey: 'productId' });
+      Product.hasMany(models.ProductImage, { foreignKey: 'productId' });
     }
   }
 
@@ -15,17 +16,17 @@ module.exports = (sequelize, DataTypes) => {
     categoryId: { type: DataTypes.INTEGER, allowNull: false, field: 'category_id' },
     name: { type: DataTypes.STRING, allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: true },
-    originalPrice: { 
-      type: DataTypes.DECIMAL(10, 2), 
-      allowNull: true, 
-      validate: { min: 0 }, 
-      field: 'original_price' 
+    originalPrice: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      validate: { min: 0 },
+      field: 'original_price'
     },
-    discountPrice: { 
-      type: DataTypes.DECIMAL(10, 2), 
-      allowNull: true, 
-      validate: { min: 0 }, 
-      field: 'discount_price' 
+    discountPrice: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      validate: { min: 0 },
+      field: 'discount_price'
     },
     madeBy: { type: DataTypes.STRING, allowNull: true, field: 'made_by' },
     material: { type: DataTypes.STRING, allowNull: true },

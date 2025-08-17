@@ -59,6 +59,7 @@ function MainShop(props) {
             keyword: keyword
 
         })
+        console.log("arrData", arrData);
         if (arrData && arrData.errCode === 0) {
             setdataProduct(arrData.data)
             setCount(Math.ceil(arrData.count / limitPage))
@@ -133,8 +134,8 @@ function MainShop(props) {
                     {dataProduct && dataProduct.length > 0 &&
                         dataProduct.map((item, index) => {
                             return (
-                                <ItemProduct id={item.id} width={"255px"} height={"254px"} type="col-lg-4 col-md-6" name={item.name} img={item.productDetail[0].productImage[0].image}
-                                    discountPrice={item.productDetail[0].discountPrice} price={item.productDetail[0].originalPrice}></ItemProduct>
+                                <ItemProduct id={item.productId} width={"255px"} height={"254px"} type="col-lg-4 col-md-6" name={item.name} img={item?.ProductImages[0]?.image}
+                                    discountPrice={item.discountPrice} price={item.originalPrice}></ItemProduct>
                             )
                         })
                     }

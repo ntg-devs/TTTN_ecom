@@ -12,7 +12,7 @@ import DescriptionProduct from "../../component/Product/DescriptionProduct";
 import ProductFeature from "../../component/HomeFeature/ProductFeature";
 function DetailProductPage(props) {
 
-  const hasTracked = useRef(false);  
+  const hasTracked = useRef(false);
   const [dataProduct, setDataProduct] = useState({});
   const [dataDetailSize, setdataDetailSize] = useState({});
   const { id } = useParams();
@@ -21,14 +21,15 @@ function DetailProductPage(props) {
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("userData"));
     if (userData) {
-      fetchProductFeature(userData.id);
+
+      //fetchProductFeature(userData.id);
       setUser(userData);
     }
 
     window.scrollTo(0, 0);
 
     fetchDetailProduct();
-     if (!hasTracked.current) {
+    if (!hasTracked.current) {
       hasTracked.current = true;
       handleAccessKOLLink();
     }
@@ -58,18 +59,19 @@ function DetailProductPage(props) {
   };
   let fetchDetailProduct = async () => {
     let res = await getDetailProductByIdService(id);
+    console.log("res detail product", res);
     if (res && res.errCode === 0) {
       setDataProduct(res.data);
     }
   };
   let fetchProductFeature = async (userId) => {
-    let res = await getProductRecommendService({
-      limit: 20,
-      userId: userId,
-    });
-    if (res && res.errCode === 0) {
-      setdataProductRecommend(res.data);
-    }
+    // let res = await getProductRecommendService({
+    //   limit: 20,
+    //   userId: userId,
+    // });
+    // if (res && res.errCode === 0) {
+    //   setdataProductRecommend(res.data);
+    // }
   };
   return (
     <div>
@@ -92,7 +94,7 @@ function DetailProductPage(props) {
       <div className="product_image_area">
         <div className="container">
           <InfoDetailProduct
-            userId={user && user.id ? user.id : ""}
+            userId={user && user.customerId ? user.customerId : ""}
             dataProduct={dataProduct}
             sendDataFromInforDetail={sendDataFromInforDetail}
           >
@@ -103,7 +105,7 @@ function DetailProductPage(props) {
       <section className="product_description_area">
         <div className="container">
           <ul className="nav nav-tabs" id="myTab" role="tablist">
-            <li className="nav-item">
+            {/* <li className="nav-item">
               <a
                 className="nav-link active"
                 id="profile-tab"
@@ -115,7 +117,7 @@ function DetailProductPage(props) {
               >
                 Thông số chi tiết
               </a>
-            </li>
+            </li> */}
             <li className="nav-item">
               <a
                 className="nav-link "
@@ -145,21 +147,21 @@ function DetailProductPage(props) {
             </li>
           </ul>
           <div className="tab-content" id="myTabContent">
-            <div
+            {/* <div
               className="tab-pane fade show active"
               id="profile"
               role="tabpanel"
               aria-labelledby="profile-tab"
             >
               <ProfileProduct data={dataDetailSize} />
-            </div>
+            </div> */}
             <div
               className="tab-pane fade "
               id="home"
               role="tabpanel"
               aria-labelledby="home-tab"
             >
-              <DescriptionProduct data={dataProduct.contentHTML} />
+              <DescriptionProduct data={dataProduct.description} />
             </div>
 
             <div

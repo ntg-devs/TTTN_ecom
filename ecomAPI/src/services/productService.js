@@ -151,64 +151,103 @@ let getAllProductAdmin = (data = {}) => {
         }
     });
 };
-let getAllProductUser = (data) => {
+let getAllProductUser = (data = {}) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let objectFilter = {
-                where: { statusId: 'S1' },
+            const {
+                limit,
+                offset,
+                sortPrice,
+                sortName,
+                categoryId,
+                keyword
+            } = data;
+
+            // chỉ lấy sản phẩm đang active
+            const where = { isActive: 1 };
+            if (categoryId && categoryId !== 'ALL') {
+                where.categoryId = Number(categoryId);
+            }
+            if (keyword && keyword !== '') {
+                where.name = { [Op.substring]: keyword };
+            }
+
+            // sắp xếp
+            const order = [];
+            if (sortName === 'true') order.push(['name', 'ASC']);
+            if (sortPrice === 'true') {
+                order.push([literal('COALESCE(`Product`.`discount_price`,`Product`.`original_price`)'), 'ASC']);
+            }
+
+            const options = {
+                where,
                 include: [
-                    { model: db.Allcode, as: 'brandData', attributes: ['value', 'code'] },
-                    { model: db.Allcode, as: 'categoryData', attributes: ['value', 'code'] },
-                    { model: db.Allcode, as: 'statusData', attributes: ['value', 'code'] },
-                ],
-                raw: true,
-                nest: true
-            }
-            if (data.limit && data.offset) {
-                objectFilter.limit = +data.limit
-                objectFilter.offset = +data.offset
-            }
+                    {
+                        model: db.Category,
+                        attributes: ['categoryId', 'categoryName'],
+                        required: false
+                    },
+                    {
+                        // cần đảm bảo đã khai báo Product.hasMany(ProductImage, { foreignKey: 'productId' })
+                        model: db.ProductImage,
+                        attributes: ['image'],
+                        required: false,
+                        separate: true,            // tránh nhân bản dòng & giữ count chính xác
 
-            if (data.categoryId && data.categoryId !== 'ALL') objectFilter.where = { categoryId: data.categoryId }
-            if (data.brandId && data.brandId !== 'ALL') objectFilter.where = { ...objectFilter.where, brandId: data.brandId }
-            if (data.sortName === "true") objectFilter.order = [['name', 'ASC']]
-            if (data.keyword !== '') objectFilter.where = { ...objectFilter.where, name: { [Op.substring]: data.keyword } }
-
-            let res = await db.Product.findAndCountAll(objectFilter)
-            for (let i = 0; i < res.rows.length; i++) {
-                let objectFilterProductDetail = {
-                    where: { productId: res.rows[i].id }, raw: true
-                }
-
-                res.rows[i].productDetail = await db.ProductDetail.findAll(objectFilterProductDetail)
-
-                for (let j = 0; j < res.rows[i].productDetail.length; j++) {
-                    res.rows[i].productDetail[j].productDetailSize = await db.ProductDetailSize.findAll({ where: { productdetailId: res.rows[i].productDetail[j].id }, raw: true })
-
-                    res.rows[i].price = res.rows[i].productDetail[0].discountPrice
-                    res.rows[i].productDetail[j].productImage = await db.ProductImage.findAll({ where: { productdetailId: res.rows[i].productDetail[j].id }, raw: true })
-                    for (let k = 0; k < res.rows[i].productDetail[j].productImage.length > 0; k++) {
-                        res.rows[i].productDetail[j].productImage[k].image = new Buffer(res.rows[i].productDetail[j].productImage[k].image, 'base64').toString('binary')
                     }
-                }
-            }
-            if (data.sortPrice && data.sortPrice === "true") {
+                ],
+                order: order.length ? order : undefined,
+                distinct: true,
+                raw: false
+            };
 
-                res.rows.sort(dynamicSortMultiple("price"))
+            if (limit != null && offset != null) {
+                options.limit = +limit;
+                options.offset = +offset;
             }
+
+            const res = await db.Product.findAndCountAll(options);
+
+            // chuyển instance -> plain + tính giá hiển thị + chuẩn hoá ảnh base64
+            const rows = res.rows.map(inst => {
+                const p = inst.get({ plain: true });
+                const price =
+                    p.discountPrice != null ? Number(p.discountPrice) :
+                        (p.originalPrice != null ? Number(p.originalPrice) : null);
+
+                const images = Array.isArray(p.ProductImages)
+                    ? p.ProductImages.map(img => {
+                        let base64 = null;
+                        if (img.image) {
+                            if (Buffer.isBuffer(img.image)) {
+                                base64 = img.image.toString('base64'); // BLOB -> base64
+                            } else if (typeof img.image === 'string') {
+                                // trường hợp đã lưu base64 dạng string
+                                base64 = img.image;
+                            }
+                        }
+                        return {
+                            imageId: img.imageId,
+                            description: img.description,
+                            // tuỳ frontend, có thể thêm prefix: `data:image/*;base64,${base64}`
+                            imageBase64: base64
+                        };
+                    })
+                    : [];
+
+                return { ...p, price, images };
+            });
 
             resolve({
                 errCode: 0,
-                data: res.rows,
+                data: rows,
                 count: res.count
-            })
-
-
+            });
         } catch (error) {
-            reject(error)
+            reject(error);
         }
-    })
-}
+    });
+};
 let UnactiveProduct = (data) => {
     return new Promise(async (resolve, reject) => {
         try {

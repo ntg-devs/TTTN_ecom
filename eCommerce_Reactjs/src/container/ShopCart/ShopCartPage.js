@@ -33,7 +33,7 @@ function ShopCartPage(props) {
         const userData = JSON.parse(localStorage.getItem("userData"));
         setuser(userData);
         if (userData) {
-            dispatch(getItemCartStart(userData.id));
+            dispatch(getItemCartStart(userData.customerId));
         } else {
             toast.error("Hãy đăng nhập để mua hàng");
             return;
@@ -45,13 +45,14 @@ function ShopCartPage(props) {
                 offset: "",
                 keyword: "",
             });
+
             if (res && res.errCode === 0) {
                 settypeShip(res.data);
             }
         };
         fetchTypeShip();
-        if (dataTypeShip && dataTypeShip.price) {
-            setpriceShip(dataTypeShip.price);
+        if (dataTypeShip && dataTypeShip.cost) {
+            setpriceShip(dataTypeShip.cost);
         }
     }, []);
 
@@ -66,10 +67,10 @@ function ShopCartPage(props) {
         setisOpenModal(true);
     };
     let handleOpenAddressUserModal = async () => {
-        if (user && user.id) {
-            let res = await getAllAddressUserByUserIdService(user.id);
+        if (user && user.customerId) {
+            let res = await getAllAddressUserByUserIdService(user.customerId);
             if (res && res.errCode === 0 && res.data.length > 0) {
-                navigate(`/order/${user.id}`);
+                navigate(`/order/${user.customerId}`);
             } else {
                 setisOpenModalAddressUser(true);
             }
@@ -84,7 +85,7 @@ function ShopCartPage(props) {
         ) {
             if (
                 (price * discount.voucherData.typeVoucherOfVoucherData.value) /
-                    100 >
+                100 >
                 discount.voucherData.typeVoucherOfVoucherData.maxValue
             ) {
                 return (
@@ -96,7 +97,7 @@ function ShopCartPage(props) {
                     price -
                     (price *
                         discount.voucherData.typeVoucherOfVoucherData.value) /
-                        100
+                    100
                 );
             }
         } else {
@@ -114,11 +115,11 @@ function ShopCartPage(props) {
             shipAdress: data.shipAdress,
             shipEmail: data.shipEmail,
             shipPhonenumber: data.shipPhonenumber,
-            userId: user.id,
+            userId: user.customerId,
         });
         if (res && res.errCode === 0) {
             toast.success("Thêm địa chỉ thành công !");
-            navigate(`/order/${user.id}`);
+            navigate(`/order/${user.customerId}`);
         } else {
             toast.error(res.errMessage);
         }
@@ -127,9 +128,10 @@ function ShopCartPage(props) {
         setisOpenModal(false);
     };
     let hanldeOnChangeTypeShip = (item) => {
-        setpriceShip(item.price);
+        setpriceShip(item.cost);
         dispatch(ChooseTypeShipStart(item));
     };
+
     return (
         <section className="cart_area">
             <div className="container">
@@ -160,29 +162,30 @@ function ShopCartPage(props) {
                                     dataCart.length > 0 &&
                                     dataCart.map((item, index) => {
                                         price +=
-                                            item.quantity *
-                                            item.productDetail.discountPrice;
+                                            item?.quantity *
+                                            item?.product?.discountPrice;
 
-                                        let name = `${item.productData.name} - ${item.productDetail.nameDetail} - ${item.productdetailsizeData.sizeData.value}`;
+                                        let name = `${item?.product?.name}  - size : ${item?.productSize?.size?.sizeName}`;
                                         return (
                                             <ShopCartItem
                                                 isOrder={false}
-                                                id={item.id}
-                                                userId={user && user.id}
+                                                id={item.cartItemId}
+                                                userId={user && user.customerId}
                                                 productdetailsizeId={
                                                     item.productdetailsizeData
-                                                        .id
+                                                        ?.id
                                                 }
                                                 key={index}
                                                 name={name}
                                                 price={
-                                                    item.productDetail
-                                                        .discountPrice
+                                                    item.product?.discountPrice
+
                                                 }
-                                                quantity={item.quantity}
+                                                quantity={item?.quantity}
                                                 image={
-                                                    item.productDetailImage[0]
-                                                        .image
+                                                    item?.product
+                                                        ?.images
+
                                                 }
                                             />
                                         );
@@ -202,7 +205,7 @@ function ShopCartPage(props) {
                                         <input
                                             className="form-check-input"
                                             checked={
-                                                item.id === dataTypeShip.id
+                                                item.shippingTypeId === dataTypeShip.shippingTypeId
                                                     ? true
                                                     : false
                                             }
@@ -217,9 +220,9 @@ function ShopCartPage(props) {
                                             className="form-check-label"
                                             for="exampleRadios1"
                                         >
-                                            {item.type} -{" "}
+                                            {item.name} -{" "}
                                             {CommonUtils.formatter.format(
-                                                item.price
+                                                item.cost
                                             )}
                                         </label>
                                     </div>
@@ -260,14 +263,14 @@ function ShopCartPage(props) {
                             <span className="text-price">
                                 {dataVoucher && dataVoucher.voucherData
                                     ? CommonUtils.formatter.format(
-                                          totalPriceDiscount(
-                                              price,
-                                              dataVoucher
-                                          ) + priceShip
-                                      )
+                                        totalPriceDiscount(
+                                            price,
+                                            dataVoucher
+                                        ) + priceShip
+                                    )
                                     : CommonUtils.formatter.format(
-                                          price + +priceShip
-                                      )}
+                                        price + +priceShip
+                                    )}
                             </span>
                         </div>
 
