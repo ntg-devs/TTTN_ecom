@@ -97,6 +97,7 @@ const ManageTypeShip = () => {
         }
 
     }
+
     return (
         <div className="container-fluid px-4">
             <h1 className="mt-4">Quản lý loại ship</h1>
@@ -134,12 +135,12 @@ const ManageTypeShip = () => {
                                         return (
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
-                                                <td>{item.type}</td>
-                                                <td>{CommonUtils.formatter.format(item.price)}</td>
+                                                <td>{item.name}</td>
+                                                <td>{CommonUtils.formatter.format(item.cost)}</td>
                                                 <td>
-                                                    <Link to={`/admin/edit-typeship/${item.id}`}>Edit</Link>
+                                                    <Link to={`/admin/edit-typeship/${item.shippingTypeId}`}>Edit</Link>
                                                     &nbsp; &nbsp;
-                                                    <span onClick={() => handleDeleteTypeShip(item.id)} style={{ color: '#0E6DFE', cursor: 'pointer' }}   >Delete</span>
+                                                    <span onClick={() => handleDeleteTypeShip(item.shippingTypeId)} style={{ color: '#0E6DFE', cursor: 'pointer' }}   >Delete</span>
                                                 </td>
                                             </tr>
                                         )
