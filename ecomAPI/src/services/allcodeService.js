@@ -48,10 +48,14 @@ let getAllCodeService = (typeInput) => {
                     errMessage: 'Missing required parameters !'
                 })
             } else {
+                if (typeInput === "CATEGORY") {
+                    let allCategory = await db.Category.findAll();
+                    resolve({
+                        errCode: 0,
+                        data: allCategory
+                    })
+                }
 
-                let allcode = await db.Allcode.findAll({
-                    where: { type: typeInput }
-                })
                 resolve({
                     errCode: 0,
                     data: allcode

@@ -1,112 +1,83 @@
-import React from 'react';
-import { useEffect, useState } from 'react';
-import { useFetchAllcode } from '../../customize/fetch';
-import { deleteVoucherService, getAllVoucher } from '../../../services/userService';
+import React, { useEffect, useState } from 'react';
+import { getAllVoucher, deleteVoucherService } from '../../../services/userService';
 import moment from 'moment';
 import { toast } from 'react-toastify';
 import { PAGINATION } from '../../../utils/constant';
 import ReactPaginate from 'react-paginate';
 import CommonUtils from '../../../utils/CommonUtils';
-import {
-    BrowserRouter as Router,
-    Switch,
-    Route,
-    Link,
-    Redirect
-} from "react-router-dom";
+import { Link } from "react-router-dom";
+
 const ManageVoucher = () => {
+    const [dataVoucher, setDataVoucher] = useState([]);
+    const [count, setCount] = useState(0);
+    const [numberPage, setNumberPage] = useState(0);
 
-    const [dataVoucher, setdataVoucher] = useState([])
-    const [count, setCount] = useState('')
-    const [numberPage, setnumberPage] = useState('')
-    useEffect(() => {
+    const fetchVouchers = async (page = 0) => {
         try {
-            let fetchData = async () => {
-                let arrData = await getAllVoucher({
-
-                    limit: PAGINATION.pagerow,
-                    offset: 0
-
-                })
-                if (arrData && arrData.errCode === 0) {
-                    setdataVoucher(arrData.data)
-                    setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
-                }
-            }
-            fetchData();
-        } catch (error) {
-            console.log(error)
-        }
-
-    }, [])
-    let handleDeleteVoucher = async (id) => {
-
-        let res = await deleteVoucherService({
-            data: {
-                id: id
-            }
-        })
-        if (res && res.errCode === 0) {
-            toast.success("Xóa mã voucher thành công")
-            let arrData = await getAllVoucher({
+            let res = await getAllVoucher({
                 limit: PAGINATION.pagerow,
-                offset: numberPage * PAGINATION.pagerow
-
-            })
-            if (arrData && arrData.errCode === 0) {
-                setdataVoucher(arrData.data)
-                setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
+                offset: page * PAGINATION.pagerow
+            });
+            if (res && res.errCode === 0) {
+                setDataVoucher(res.data);
+                setCount(Math.ceil(res.count / PAGINATION.pagerow));
             }
-
-        } else toast.error("Xóa mã voucher thất bại")
-    }
-    let handleChangePage = async (number) => {
-        setnumberPage(number.selected)
-        let arrData = await getAllVoucher({
-            limit: PAGINATION.pagerow,
-            offset: number.selected * PAGINATION.pagerow
-
-        })
-        if (arrData && arrData.errCode === 0) {
-            setdataVoucher(arrData.data)
-
+        } catch (error) {
+            console.error(error);
         }
-    }
-    let handleOnClickExport =async () =>{
-        let res = await getAllVoucher({
-          
-            limit: '',
-            offset: '',
-            
-        })
-        if(res && res.errCode == 0){
-            res.data.forEach(item => {
-               item.fromDate = moment.unix(item.fromDate / 1000).format('DD/MM/YYYY')
-               item.toDate=  moment.unix(item.toDate / 1000).format('DD/MM/YYYY')
-            })
-            await CommonUtils.exportExcel(res.data,"Danh sách voucher","ListVoucher")
+    };
+
+    useEffect(() => {
+        fetchVouchers();
+    }, []);
+
+    const handleDeleteVoucher = async (id) => {
+        let res = await deleteVoucherService({ data: { id } });
+        if (res && res.errCode === 0) {
+            toast.success("Xóa voucher thành công");
+            fetchVouchers(numberPage);
+        } else {
+            toast.error("Xóa voucher thất bại");
         }
-       
-    }
+    };
+
+    const handleChangePage = (number) => {
+        setNumberPage(number.selected);
+        fetchVouchers(number.selected);
+    };
+
+    const handleExport = async () => {
+        let res = await getAllVoucher({ limit: '', offset: '' });
+        if (res && res.errCode === 0) {
+            let exportData = res.data.map(item => ({
+                "Mã voucher": item.code,
+                "Loại voucher": item.type,
+                "Số lượng": item.quantity,
+                "Đã sử dụng": item.usedAmount,
+                "Giá trị giảm": item.discountValue,
+                "Giá trị tối đa": item.maxDiscount,
+                "Giá trị tối thiểu đơn hàng": item.minOrderValue,
+                "Ngày bắt đầu": moment(item.startDate).format('DD/MM/YYYY'),
+                "Ngày kết thúc": moment(item.endDate).format('DD/MM/YYYY')
+            }));
+            await CommonUtils.exportExcel(exportData, "Danh sách voucher", "ListVoucher");
+        }
+    };
+
     return (
         <div className="container-fluid px-4">
             <h1 className="mt-4">Quản lý mã voucher</h1>
-
-
             <div className="card mb-4">
                 <div className="card-header">
                     <i className="fas fa-table me-1" />
                     Danh sách mã voucher
+                    <button className="btn btn-success" style={{ float: 'right' }} onClick={handleExport}>
+                        Xuất excel <i className="fa-solid fa-file-excel"></i>
+                    </button>
                 </div>
                 <div className="card-body">
-                <div className='row'>
-                   
-                    <div className='col-12 mb-2'>
-                    <button  style={{float:'right'}} onClick={() => handleOnClickExport()} className="btn btn-success" >Xuất excel <i class="fa-solid fa-file-excel"></i></button>
-                    </div>
-                    </div>
                     <div className="table-responsive">
-                        <table className="table table-bordered" style={{ border: '1' }} width="100%" cellspacing="0">
+                        <table className="table table-bordered" width="100%" cellSpacing="0">
                             <thead>
                                 <tr>
                                     <th>STT</th>
@@ -114,47 +85,56 @@ const ManageVoucher = () => {
                                     <th>Loại voucher</th>
                                     <th>Số lượng</th>
                                     <th>Đã sử dụng</th>
+                                    <th>Giá trị giảm</th>
+                                    <th>Giá trị tối đa</th>
+                                    <th>Giá trị tối thiểu đơn hàng</th>
                                     <th>Ngày bắt đầu</th>
                                     <th>Ngày kết thúc</th>
                                     <th>Thao tác</th>
                                 </tr>
                             </thead>
-
                             <tbody>
-                                {dataVoucher && dataVoucher.length > 0 &&
-                                    dataVoucher.map((item, index) => {
-                                        let name = `${item.typeVoucherOfVoucherData.value} ${item.typeVoucherOfVoucherData.typeVoucherData.value}`
-                                        return (
-                                            <tr key={index}>
-                                                <td>{index + 1}</td>
-                                                <td>{item.codeVoucher}</td>
-                                                <td>{name}</td>
-                                                <td>{item.amount}</td>
-                                                <td>{item.usedAmount}</td>
-                                                <td>{moment.unix(item.fromDate / 1000).format('DD/MM/YYYY')}</td>
-                                                <td>{moment.unix(item.toDate / 1000).format('DD/MM/YYYY')}</td>
-                                                <td>
-                                                    <Link to={`/admin/edit-voucher/${item.id}`}>Edit</Link>
-                                                    &nbsp; &nbsp;
-                                                    <span onClick={() => handleDeleteVoucher(item.id)} style={{ color: '#0E6DFE', cursor: 'pointer' }}   >Delete</span>
-                                                </td>
-                                            </tr>
-                                        )
-                                    })
-                                }
-
-
+                                {dataVoucher.length > 0 ? dataVoucher.map((item, index) => (
+                                    <tr key={index}>
+                                        <td>{index + 1}</td>
+                                        <td>{item.code}</td>
+                                        <td>{item.type}</td>
+                                        <td>{item.quantity}</td>
+                                        <td>{item.usedAmount}</td>
+                                        <td>{item.discountValue}</td>
+                                        <td>{item.maxDiscount}</td>
+                                        <td>{item.minOrderValue}</td>
+                                        <td>{moment(item.startDate).format('DD/MM/YYYY')}</td>
+                                        <td>{moment(item.endDate).format('DD/MM/YYYY')}</td>
+                                        <td>
+                                            <Link to={`/admin/edit-voucher/${item.voucherId}`}>Edit</Link>
+                                            &nbsp;|&nbsp;
+                                            <span
+                                                style={{ color: '#0E6DFE', cursor: 'pointer' }}
+                                                onClick={() => handleDeleteVoucher(item.voucherId)}
+                                            >
+                                                Delete
+                                            </span>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan={11} style={{ textAlign: 'center' }}>Chưa có voucher</td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+
             <ReactPaginate
                 previousLabel={'Quay lại'}
                 nextLabel={'Tiếp'}
                 breakLabel={'...'}
                 pageCount={count}
-                marginPagesDisplayed={3}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={5}
                 containerClassName={"pagination justify-content-center"}
                 pageClassName={"page-item"}
                 pageLinkClassName={"page-link"}
@@ -167,6 +147,7 @@ const ManageVoucher = () => {
                 onPageChange={handleChangePage}
             />
         </div>
-    )
-}
+    );
+};
+
 export default ManageVoucher;

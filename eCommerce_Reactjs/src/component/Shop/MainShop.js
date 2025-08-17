@@ -14,17 +14,17 @@ function MainShop(props) {
     const [sortName, setsortName] = useState('')
     const [offset, setoffset] = useState(0)
     const [categoryId, setcategoryId] = useState('')
-    const [brandId, setbrandId] = useState('')
+
     const [keyword, setkeyword] = useState('')
     useEffect(() => {
 
-      
-         loadProduct(limitPage, sortName, sortPrice, offset, categoryId,keyword)
-    
+
+        loadProduct(limitPage, sortName, sortPrice, offset, categoryId, keyword)
+
     }, [])
     useEffect(() => {
         setcategoryId(props.categoryId)
-        setbrandId(props.brandId)
+
         let fetchCategory = async () => {
 
             let arrData = await getAllProductUser({
@@ -34,8 +34,8 @@ function MainShop(props) {
                 limit: limitPage,
                 offset: offset,
                 categoryId: props.categoryId,
-                brandId: props.brandId,
-                 keyword:keyword
+
+                keyword: keyword
             })
             if (arrData && arrData.errCode === 0) {
                 setdataProduct(arrData.data)
@@ -44,10 +44,10 @@ function MainShop(props) {
         }
         fetchCategory()
 
-    }, [props.categoryId, props.brandId])
+    }, [props.categoryId])
 
 
-    let loadProduct = async (limitPage, sortName, sortPrice, offset, categoryId,keyword) => {
+    let loadProduct = async (limitPage, sortName, sortPrice, offset, categoryId, keyword) => {
         let arrData = await getAllProductUser({
 
             sortPrice: sortPrice,
@@ -55,8 +55,8 @@ function MainShop(props) {
             limit: limitPage,
             offset: offset,
             categoryId: categoryId,
-            brandId: brandId,
-            keyword:keyword
+
+            keyword: keyword
 
         })
         if (arrData && arrData.errCode === 0) {
@@ -66,12 +66,12 @@ function MainShop(props) {
     }
     let handleSelectLimitPage = async (event) => {
 
-         setlimitPage(event.target.value)
-         loadProduct(event.target.value, sortName, sortPrice, offset, categoryId,keyword)
+        setlimitPage(event.target.value)
+        loadProduct(event.target.value, sortName, sortPrice, offset, categoryId, keyword)
     }
     let handleChangePage = async (number) => {
         setnumberPage(number.selected)
-        loadProduct(limitPage, sortName, sortPrice, number.selected * limitPage, categoryId,keyword)
+        loadProduct(limitPage, sortName, sortPrice, number.selected * limitPage, categoryId, keyword)
         setoffset(number.selected * limitPage)
         props.myRef.current.scrollIntoView()
 
@@ -80,28 +80,28 @@ function MainShop(props) {
         let value = +event.target.value
 
         if (value === 1) {
-            loadProduct(limitPage, '', '', offset, categoryId,keyword)
+            loadProduct(limitPage, '', '', offset, categoryId, keyword)
 
         }
         else if (value === 2) {
-            loadProduct(limitPage, '', true, offset, categoryId,keyword)
+            loadProduct(limitPage, '', true, offset, categoryId, keyword)
             setsortPrice(true)
             setsortName('')
         }
         else if (value === 3) {
-            loadProduct(limitPage, true, '', offset, categoryId,keyword)
+            loadProduct(limitPage, true, '', offset, categoryId, keyword)
             setsortPrice('')
             setsortName(true)
         }
     }
-    let handleSearch = (keyword) =>{
-       
-        loadProduct(limitPage, sortName, sortPrice, offset, categoryId,keyword)
+    let handleSearch = (keyword) => {
+
+        loadProduct(limitPage, sortName, sortPrice, offset, categoryId, keyword)
         setkeyword(keyword)
     }
-    let handleOnchangeSearch = (keyword) =>{
-        if(keyword === ''){
-            loadProduct(limitPage, sortName, sortPrice, offset, categoryId,keyword)
+    let handleOnchangeSearch = (keyword) => {
+        if (keyword === '') {
+            loadProduct(limitPage, sortName, sortPrice, offset, categoryId, keyword)
             setkeyword(keyword)
         }
     }
@@ -119,14 +119,14 @@ function MainShop(props) {
                         <option value={12}>Hiển thị 12</option>
                         <option value={18}>Hiển thị 18</option>
                     </select>
-                    <div style={{display:'inline-block',marginLeft:'10px',width:'300px'}}>
-                    <FormSearch title={"tên tên quần áo"} handleOnchange={handleOnchangeSearch} handleSearch={handleSearch} />
+                    <div style={{ display: 'inline-block', marginLeft: '10px', width: '300px' }}>
+                        <FormSearch title={"tên tên quần áo"} handleOnchange={handleOnchangeSearch} handleSearch={handleSearch} />
                     </div>
-                    
-                    
-                   
+
+
+
                 </div>
-                
+
             </div>
             <div style={{ marginBottom: '10px' }} className="latest_product_inner">
                 <div className="row">

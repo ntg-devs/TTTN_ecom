@@ -28,6 +28,7 @@ const ManageTypeShip = () => {
                     offset: 0
 
                 })
+                console.log(arrData)
                 if (arrData && arrData.errCode === 0) {
                     setdataTypeVoucher(arrData.data)
                     setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
@@ -120,10 +121,10 @@ const ManageTypeShip = () => {
                                         return (
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
-                                                <td>{item.typeVoucherData.value}</td>
-                                                <td>{item.typeVoucher == "percent" ? item.value + "%" : CommonUtils.formatter.format(item.value)}</td>
-                                                <td>{CommonUtils.formatter.format(item.minValue)}</td>
-                                                <td>{CommonUtils.formatter.format(item.maxValue)}</td>
+                                                <td>{item.code}</td>
+                                                <td>{item.type == "percent" ? item.discountValue + "%" : CommonUtils.formatter.format(item.discountValue)}</td>
+                                                <td>{CommonUtils.formatter.format(item.minOrderValue)}</td>
+                                                <td>{CommonUtils.formatter.format(item.maxDiscount)}</td>
                                                 <td>
                                                     <Link to={`/admin/edit-typevoucher/${item.id}`}>Edit</Link>
                                                     &nbsp; &nbsp;

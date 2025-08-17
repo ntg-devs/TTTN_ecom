@@ -2,18 +2,20 @@ import React, { useState, useEffect } from "react";
 import { getAllCodeService } from "../../services/userService";
 function Category(props) {
     const [arrCategory, setarrCategory] = useState([]);
-    const [activeLinkId, setactiveLinkId] = useState("");
+    const [activeLinkId, setactiveLinkId] = useState(0);
 
     useEffect(() => {
         let fetchCategory = async () => {
             let arrData = await getAllCodeService("CATEGORY");
+            //console.log("arrData", arrData);
             if (arrData && arrData.errCode === 0) {
                 arrData.data.unshift({
                     createdAt: null,
-                    code: "ALL",
+                    categoryId: 0,
                     type: "CATEGORY",
-                    value: "Tất cả",
+                    categoryName: "Tất cả",
                 });
+
                 setarrCategory(arrData.data);
             }
         };
@@ -36,18 +38,19 @@ function Category(props) {
                         arrCategory.map((item, index) => {
                             return (
                                 <li
+
                                     className={
-                                        item.code === activeLinkId
+                                        item.categoryId === activeLinkId
                                             ? "active"
                                             : ""
                                     }
                                     style={{ cursor: "pointer" }}
                                     onClick={() =>
-                                        handleClickCategory(item.code)
+                                        handleClickCategory(item.categoryId)
                                     }
                                     key={index}
                                 >
-                                    <a>{item.value}</a>
+                                    <a>{item.categoryName}</a>
                                 </li>
                             );
                         })}

@@ -20,7 +20,7 @@ let createNewTypeVoucher = (data) => {
                 resolve({
                     errCode: 0,
                     errMessage: 'ok'
-                })
+                })  
             }
         } catch (error) {
             reject(error)
@@ -59,10 +59,6 @@ let getAllTypeVoucher = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
             let objectFilter = {
-                include: [
-                    { model: db.Allcode, as: 'typeVoucherData', attributes: ['value', 'code'] },
-
-                ],
                 raw: true,
                 nest: true
 
@@ -71,7 +67,21 @@ let getAllTypeVoucher = (data) => {
                 objectFilter.limit = +data.limit
                 objectFilter.offset = +data.offset
             }
-            let res = await db.TypeVoucher.findAndCountAll(objectFilter)
+            let res = await db.Voucher.findAndCountAll(objectFilter)
+
+            if (res && res.rows.length) {
+                for (let i = 0; i < res.rows.length; i++) {
+                    // Đếm số đơn đã dùng voucher
+                    let countUsed = await db.Orders.count({
+                        where: {
+                            voucherId: res.rows[i].voucherId
+                        }
+                    });
+                    // Gán số lượng đã dùng vào object voucher
+                    res.rows[i].usedAmount = countUsed;
+                }
+            }
+            console.log(res)
 
             resolve({
                 errCode: 0,
@@ -175,29 +185,43 @@ let getSelectTypeVoucher = () => {
 let createNewVoucher = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!data.fromDate || !data.toDate || !data.typeVoucherId || !data.amount || !data.codeVoucher) {
+            // Kiểm tra các tham số bắt buộc
+            if (
+                !data.code ||
+                !data.type ||
+                !data.quantity ||
+                !data.discountValue ||
+                !data.startDate ||
+                !data.endDate
+            ) {
                 resolve({
                     errCode: 1,
-                    errMessage: 'Missing required parameter !'
-                })
-            } else {
-                await db.Voucher.create({
-                    fromDate: data.fromDate,
-                    toDate: data.toDate,
-                    typeVoucherId: data.typeVoucherId,
-                    amount: data.amount,
-                    codeVoucher: data.codeVoucher
-                })
-                resolve({
-                    errCode: 0,
-                    errMessage: 'ok'
-                })
+                    errMessage: 'Missing required parameter!'
+                });
+                return;
             }
+
+            await db.Voucher.create({
+                code: data.code,
+                type: data.type,
+                quantity: data.quantity,
+                discountValue: data.discountValue,
+                minOrderValue: data.minOrderValue || 0,
+                maxDiscount: data.maxDiscount || 0,
+                startDate: new Date(data.startDate),
+                endDate: new Date(data.endDate)
+            });
+
+            resolve({
+                errCode: 0,
+                errMessage: 'Create voucher successfully!'
+            });
         } catch (error) {
-            reject(error)
+            reject(error);
         }
-    })
-}
+    });
+};
+
 let getDetailVoucherById = (id) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -208,7 +232,7 @@ let getDetailVoucherById = (id) => {
                 })
             } else {
                 let res = await db.Voucher.findOne({
-                    where: { id: id },
+                    where: { voucherId: id },
                 })
                 resolve({
                     errCode: 0,
@@ -217,23 +241,13 @@ let getDetailVoucherById = (id) => {
             }
         } catch (error) {
             reject(error)
-        }
+        }   
     })
 }
 let getAllVoucher = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
             let objectFilter = {
-                include: [
-                    {
-                        model: db.TypeVoucher, as: 'typeVoucherOfVoucherData',
-                        include: [
-                            { model: db.Allcode, as: 'typeVoucherData', attributes: ['value', 'code'] },
-
-                        ],
-                    },
-
-                ],
                 raw: true,
                 nest: true
 
@@ -243,25 +257,26 @@ let getAllVoucher = (data) => {
                 objectFilter.offset = +data.offset
             }
             let res = await db.Voucher.findAndCountAll(objectFilter)
-            if (res) {
+
+            if (res && res.rows.length) {
                 for (let i = 0; i < res.rows.length; i++) {
-                    let voucherUsed = await db.VoucherUsed.findAll({
+                    // Đếm số đơn đã dùng voucher
+                    let countUsed = await db.Orders.count({
                         where: {
-                            voucherId: res.rows[i].id,
-                            status: 1
+                            voucherId: res.rows[i].voucherId
                         }
-                    })
-                    res.rows[i].usedAmount = voucherUsed.length
+                    });
+                    // Gán số lượng đã dùng vào object voucher
+                    res.rows[i].usedAmount = countUsed;
                 }
             }
-
+            console.log(res)
 
             resolve({
                 errCode: 0,
                 data: res.rows,
                 count: res.count
             })
-
 
 
 
@@ -273,35 +288,57 @@ let getAllVoucher = (data) => {
 let updateVoucher = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!data.id || !data.fromDate || !data.toDate || !data.typeVoucherId || !data.amount || !data.codeVoucher) {
+            // Kiểm tra các tham số bắt buộc
+            if (
+                !data.id ||
+                !data.startDate ||
+                !data.endDate ||
+                !data.type ||
+                !data.quantity ||
+                !data.code ||
+                !data.discountValue
+            ) {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing required parameter !'
-                })
-            } else {
-                let voucher = await db.Voucher.findOne({
-                    where: { id: data.id },
-                    raw: false
-                })
-                if (voucher) {
-                    voucher.fromDate = data.fromDate;
-                    voucher.toDate = data.toDate;
-                    voucher.typeVoucherId = data.typeVoucherId;
-                    voucher.amount = data.amount;
-                    voucher.codeVoucher = data.codeVoucher;
-                    await voucher.save()
-                    resolve({
-                        errCode: 0,
-                        errMessage: 'ok'
-                    })
-                }
+                });
+                return;
             }
 
+            // Tìm voucher theo id
+            let voucher = await db.Voucher.findOne({
+                where: { voucherId: data.id },
+                raw: false
+            });
+
+            if (voucher) {
+                voucher.startDate = data.startDate;
+                voucher.endDate = data.endDate;
+                voucher.type = data.type;
+                voucher.quantity = data.quantity;
+                voucher.code = data.code;
+                voucher.discountValue = data.discountValue;
+                voucher.minOrderValue = data.minOrderValue || 0;
+                voucher.maxDiscount = data.maxDiscount || 0;
+
+                await voucher.save();
+
+                resolve({
+                    errCode: 0,
+                    errMessage: 'Update voucher successfully!'
+                });
+            } else {
+                resolve({
+                    errCode: 2,
+                    errMessage: 'Voucher not found'
+                });
+            }
         } catch (error) {
-            reject(error)
+            reject(error);
         }
-    })
-}
+    });
+};
+
 let deleteVoucher = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -312,11 +349,11 @@ let deleteVoucher = (data) => {
                 })
             } else {
                 let voucher = await db.Voucher.findOne({
-                    where: { id: data.id }
+                    where: { voucherId: data.id }
                 })
                 if (voucher) {
                     await db.Voucher.destroy({
-                        where: { id: data.id }
+                        where: { voucherId: data.id }
                     })
                     resolve({
                         errCode: 0,

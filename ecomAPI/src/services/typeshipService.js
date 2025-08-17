@@ -11,9 +11,9 @@ let createNewTypeShip = (data) => {
                     errMessage: 'Missing required parameter !'
                 })
             } else {
-                await db.TypeShip.create({
-                    type: data.type,
-                    price: data.price
+                await db.ShippingType.create({
+                    name: data.name,
+                    cost: data.cost
                 })
                 resolve({
                     errCode: 0,
@@ -34,8 +34,8 @@ let getDetailTypeshipById = (id) => {
                     errMessage: 'Missing required parameter !'
                 })
             } else {
-                let res = await db.TypeShip.findOne({
-                    where: { id: id },
+                let res = await db.ShippingType.findOne({
+                    where: { shippingTypeId: id },
                 })
                 resolve({
                     errCode: 0,
@@ -49,14 +49,15 @@ let getDetailTypeshipById = (id) => {
 }
 let getAllTypeship = (data) => {
     return new Promise(async (resolve, reject) => {
+        console.log(data)
         try {
             let objectFilter = {}
             if (data.limit && data.offset) {
                 objectFilter.limit = +data.limit
                 objectFilter.offset = +data.offset
             }
-            if(data.keyword !=='') objectFilter.where = {...objectFilter.where, type: {[Op.substring]: data.keyword  } }
-            let res = await db.TypeShip.findAndCountAll(objectFilter)
+            if(data.keyword !=='') objectFilter.where = {...objectFilter.where, name: {[Op.substring]: data.keyword  } }
+            let res = await db.ShippingType.findAndCountAll(objectFilter)
 
             resolve({
                 errCode: 0,
@@ -74,19 +75,19 @@ let getAllTypeship = (data) => {
 let updateTypeship = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!data.id || !data.type || !data.price) {
+            if (!data.id || !data.name || !data.cost) {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing required parameter !'
                 })
             } else {
-                let typeship = await db.TypeShip.findOne({
-                    where: { id: data.id },
+                let typeship = await db.ShippingType.findOne({
+                    where: { shippingTypeId: data.id },
                     raw: false
                 })
                 if (typeship) {
-                    typeship.type = data.type;
-                    typeship.price = data.price;
+                    typeship.name = data.name;
+                    typeship.cost = data.cost;
                     await typeship.save()
                     resolve({
                         errCode: 0,
@@ -103,18 +104,19 @@ let updateTypeship = (data) => {
 let deleteTypeship = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
+            console.log(data)
             if (!data.id) {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing required parameter !'
                 })
             } else {
-                let typeship = await db.TypeShip.findOne({
-                    where: { id: data.id }
+                let typeship = await db.ShippingType.findOne({
+                    where: { shippingTypeId: data.id }
                 })
                 if (typeship) {
-                    await db.TypeShip.destroy({
-                        where: { id: data.id }
+                    await db.ShippingType.destroy({
+                        where: { shippingTypeId: data.id }
                     })
                     resolve({
                         errCode: 0,
