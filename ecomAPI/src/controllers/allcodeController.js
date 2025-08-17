@@ -50,7 +50,7 @@ let handleUpdateAllCode = async (req, res) => {
 }
 let getDetailAllCodeById = async (req, res) => {
     try {
-        let data = await allcodeService.getDetailAllCodeById(req.query.id);
+        let data = await allcodeService.getDetailAllCodeById(req.query.id, req.query.type);
         return res.status(200).json(data);
     } catch (error) {
         console.log(error)
@@ -62,7 +62,7 @@ let getDetailAllCodeById = async (req, res) => {
 }
 let handleDeleteAllCode = async (req, res) => {
     try {
-        let data = await allcodeService.handleDeleteAllCode(req.body.id);
+        let data = await allcodeService.handleDeleteAllCode(req.body.id, req.body.type);
         return res.status(200).json(data);
     } catch (error) {
         console.log(error)
@@ -91,5 +91,5 @@ module.exports = {
     getDetailAllCodeById: getDetailAllCodeById,
     handleDeleteAllCode: handleDeleteAllCode,
     getListAllCodeService: getListAllCodeService,
-    getAllCategoryBlog:getAllCategoryBlog,
+    getAllCategoryBlog: getAllCategoryBlog,
 }

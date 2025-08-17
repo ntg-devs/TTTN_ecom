@@ -64,23 +64,38 @@ let handleCreateNewUser = (data) => {
                     })
                 } else {
                     let hashPassword = await hashUserPasswordFromBcrypt(data.password);
-
+                    console.log("hashPassword", data)
                     const account = await db.Account.create({
                         email: data.email,
                         password: hashPassword,
                     })
-                    await db.AccountRole.create({
-                        accountId: account.accountId,
-                        roleId: 3
-                    })
-                    console.log(account.accountId);
-                    await db.Customer.create({
-                        accountId: account.accountId,
-                        fullName: data.lastName,
-                        dateOfBirth: data.dob,
-                        gender: data.gender || null,
-                        phone: data.phonenumber || null
-                    })
+                    if (data.roleId === "employee") {
+                        await db.AccountRole.create({
+                            accountId: account.accountId,
+                            roleId: 2
+                        })
+                        await db.Employee.create({
+                            accountId: account.accountId,
+                            fullName: data.lastName,
+                            dateOfBirth: data.dob,
+                            idCard: data?.cccd,
+                            gender: data.gender || null,
+                            phone: data.phonenumber || null
+                        })
+                    } else {
+                        await db.AccountRole.create({
+                            accountId: account.accountId,
+                            roleId: 3
+                        })
+                        console.log(account.accountId);
+                        await db.Customer.create({
+                            accountId: account.accountId,
+                            fullName: data.lastName,
+                            dateOfBirth: data.dob,
+                            gender: data.gender || null,
+                            phone: data.phonenumber || null
+                        })
+                    }
 
                     resolve({
                         errCode: 0,
@@ -129,48 +144,81 @@ let deleteUser = (userId) => {
         }
     })
 }
+
+
+//duy
 let updateUserData = (data) => {
     return new Promise(async (resolve, reject) => {
+        const t = await db.sequelize.transaction();
         try {
-            if (!data.id || !data.genderId) {
-                resolve({
-                    errCode: 2,
-                    errMessage: `Missing required parameters`
-                })
+            const accountId = Number(data.id);
+            if (!accountId) throw new Error('accountId không hợp lệ');
+
+            // Chuẩn hóa payload chung cho Customer/Employee
+            const payload = {
+                fullName: data.lastName || null,
+                dateOfBirth: data.dob || null,              // YYYY-MM-DD (DATEONLY)
+                gender: data.genderId || null,              // Ở model là string => "Nam"/"Nữ"
+                phone: data.phonenumber || null
+            };
+
+            // Chọn bảng theo roleId
+            let Model = null;
+            if (data.roleId === 'employee') {
+                Model = db.Employee;
+            } else if (data.roleId === 'customer') {
+                Model = db.Customer;
             } else {
-                let user = await db.User.findOne({
-                    where: { id: data.id },
-                    raw: false
-                })
-                if (user) {
-                    user.firstName = data.firstName
-                    user.lastName = data.lastName
-                    user.address = data.address
-                    user.roleId = data.roleId
-                    user.genderId = data.genderId
-                    user.phonenumber = data.phonenumber
-                    user.dob = data.dob
-                    if (data.image) {
-                        user.image = data.image
-                    }
-                    await user.save();
-                    resolve({
-                        errCode: 0,
-                        errMessage: 'Update the user succeeds!'
-                    })
-                } else {
-                    resolve({
-                        errCode: 1,
-                        errMessage: 'User not found!'
-                    })
-                }
+                throw new Error('roleId không hợp lệ (chỉ nhận "employee" hoặc "customer")');
             }
 
+            // Cập nhật theo accountId
+            const [affected] = await Model.update(payload, {
+                where: { accountId },
+                transaction: t
+            });
+
+            if (!affected) {
+                await t.rollback();
+                return resolve({ errCode: 1, message: 'Không tìm thấy bản ghi để cập nhật' });
+            }
+
+            await t.commit();
+
+            // Lấy lại bản ghi sau cập nhật, kèm Account + Roles
+            const updated = await Model.findOne({
+                where: { accountId },
+                include: [{
+                    model: db.Account,
+                    attributes: ['accountId', 'email', 'isActive'],
+                    where: { isActive: 1 },         // chỉ lấy khi account active
+                    required: true,
+                    include: [{
+                        model: db.AccountRole,
+                        attributes: ['roleId'],
+                        required: false,
+                        include: [{
+                            model: db.Role,
+                            attributes: ['roleId', 'roleName']
+                        }]
+                    }]
+                }],
+                raw: true,
+                nest: true
+            });
+
+            return resolve({
+                errCode: 0,
+                message: 'OK',
+                data: updated
+            });
         } catch (error) {
-            reject(error)
+            try { await t.rollback(); } catch (_) { }
+            reject(error);
         }
-    })
-}
+    });
+};
+
 let handleLogin = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -298,64 +346,89 @@ let handleChangePassword = (data) => {
 let getAllUser = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let objectFilter = {
-                where: { statusId: 'S1' },
-                attributes: {
-                    exclude: ['password', 'image']
-                },
-                include: [
-                    { model: db.Allcode, as: 'roleData', attributes: ['value', 'code'] },
-                    { model: db.Allcode, as: 'genderData', attributes: ['value', 'code'] },
-                ],
+            const objectFilter = {
+                where: {},   // điều kiện trên bảng customer
+                include: [{
+                    model: db.Account,
+                    attributes: ['accountId', 'email', 'isActive'],
+                    where: { isActive: 1 },          // hoặc true
+                    required: true,                  // chỉ lấy customer có account active
+                    include: [{
+                        model: db.AccountRole,         // nối thêm account_role
+                        attributes: ['roleId'],
+                        where: { roleId: { [Op.in]: [2, 3] } }, // chỉ lấy role R1, R2, R3, R4
+                        include: [{
+                            model: db.Role,              // nếu cần tên/quyền
+                            attributes: ['roleId', 'roleName'] // tuỳ field trong Role
+                        }]
+                    }]
+                }],
                 raw: true,
-                nest: true
+                nest: true,
+                distinct: true                    // để count đúng khi có include
+            };
+
+            if (data.limit) objectFilter.limit = +data.limit;
+            if (data.offset) objectFilter.offset = +data.offset;
+
+            // Customer có field 'phone' (không phải 'phonenumber')
+            if (data.keyword && data.keyword !== '') {
+                objectFilter.where.phone = { [Op.substring]: data.keyword };
             }
-            if (data.limit && data.offset) {
-                objectFilter.limit = +data.limit
-                objectFilter.offset = +data.offset
-            }
-            if (data.keyword !== '') objectFilter.where = { ...objectFilter.where, phonenumber: { [Op.substring]: data.keyword } }
-            let res = await db.User.findAndCountAll(objectFilter)
+
+            const resC = await db.Customer.findAndCountAll(objectFilter);
+            const resE = await db.Employee.findAndCountAll(objectFilter);
+
             resolve({
                 errCode: 0,
-                data: res.rows,
-                count: res.count
-            })
-
-
+                data: [...resC.rows, ...resE.rows],
+                count: resC.count + resE.count
+            });
         } catch (error) {
-            reject(error)
+            reject(error);
         }
     })
 }
-let getDetailUserById = (userid) => {
+let getDetailUserById = (accountId) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!userid) {
+            if (!accountId) {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing required parameters!'
                 })
             } else {
-                let res = await db.User.findOne({
-                    where: { id: userid, statusId: 'S1' },
-                    attributes: {
-                        exclude: ['password']
-                    },
-                    include: [
-                        { model: db.Allcode, as: 'roleData', attributes: ['value', 'code'] },
-                        { model: db.Allcode, as: 'genderData', attributes: ['value', 'code'] },
-                    ],
+                const objectFilter = {
+                    where: {},
+                    include: [{
+                        model: db.Account,
+                        attributes: ['accountId', 'email', 'isActive'],
+                        where: { isActive: 1, accountId: accountId },          // hoặc true
+                        required: true,                  // chỉ lấy customer có account active
+                        include: [{
+                            model: db.AccountRole,         // nối thêm account_role
+                            attributes: ['roleId'],
+                            where: { roleId: { [Op.in]: [2, 3] } }, // chỉ lấy role R1, R2, R3, R4
+                            include: [{
+                                model: db.Role,              // nếu cần tên/quyền
+                                attributes: ['roleId', 'roleName'] // tuỳ field trong Role
+                            }]
+                        }]
+                    }],
                     raw: true,
-                    nest: true
-                })
-                if (res.image) {
-                    res.image = new Buffer(res.image, 'base64').toString('binary');
-                }
+                    nest: true,
+                };
+
+
+
+                const resC = await db.Customer.findAndCountAll(objectFilter);
+                const resE = await db.Employee.findAndCountAll(objectFilter);
+
                 resolve({
                     errCode: 0,
-                    data: res
-                })
+                    data: [...resC.rows, ...resE.rows],
+                    count: resC.count + resE.count
+                });
             }
         } catch (error) {
             reject(error)

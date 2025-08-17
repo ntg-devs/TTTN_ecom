@@ -23,20 +23,19 @@ const ManageCategory = () => {
     const [numberPage, setnumberPage] = useState('')
     const [keyword, setkeyword] = useState('')
     useEffect(() => {
-       
-            fetchData(keyword);
-        
+
+        fetchData(keyword);
+
 
     }, [])
     let fetchData = async (keyword) => {
         let arrData = await getListAllCodeService({
-
             type: 'CATEGORY',
             limit: PAGINATION.pagerow,
             offset: 0,
-            keyword:keyword
-
+            keyword: keyword
         })
+        console.log("arrData", arrData)
         if (arrData && arrData.errCode === 0) {
             setdataCategory(arrData.data)
             setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
@@ -44,7 +43,7 @@ const ManageCategory = () => {
     }
     let handleDeleteCategory = async (event, id) => {
         event.preventDefault();
-        let res = await DeleteAllcodeService(id)
+        let res = await DeleteAllcodeService(id, "CATEGORY")
         if (res && res.errCode === 0) {
             toast.success("Xóa danh mục thành công")
             let arrData = await getListAllCodeService({
@@ -52,7 +51,7 @@ const ManageCategory = () => {
                 type: 'CATEGORY',
                 limit: PAGINATION.pagerow,
                 offset: numberPage * PAGINATION.pagerow,
-                keyword:keyword
+                keyword: keyword
 
             })
             if (arrData && arrData.errCode === 0) {
@@ -69,7 +68,7 @@ const ManageCategory = () => {
             type: 'CATEGORY',
             limit: PAGINATION.pagerow,
             offset: number.selected * PAGINATION.pagerow,
-            keyword:keyword
+            keyword: keyword
 
         })
         if (arrData && arrData.errCode === 0) {
@@ -77,27 +76,27 @@ const ManageCategory = () => {
 
         }
     }
-    let handleSearchCategory = (keyword) =>{
+    let handleSearchCategory = (keyword) => {
         fetchData(keyword)
         setkeyword(keyword)
     }
-    let handleOnchangeSearch = (keyword) =>{
-        if(keyword === ''){
+    let handleOnchangeSearch = (keyword) => {
+        if (keyword === '') {
             fetchData(keyword)
             setkeyword(keyword)
         }
     }
-    let handleOnClickExport =async () =>{
+    let handleOnClickExport = async () => {
         let res = await getListAllCodeService({
             type: 'CATEGORY',
             limit: '',
             offset: '',
-            keyword:''
+            keyword: ''
         })
-        if(res && res.errCode == 0){
-            await CommonUtils.exportExcel(res.data,"Danh sách danh mục","ListCategory")
+        if (res && res.errCode == 0) {
+            await CommonUtils.exportExcel(res.data, "Danh sách danh mục", "ListCategory")
         }
-       
+
     }
     return (
         <div className="container-fluid px-4">
@@ -110,14 +109,14 @@ const ManageCategory = () => {
                     Danh sách danh mục sản phẩm
                 </div>
                 <div className="card-body">
-                
+
                     <div className='row'>
-                    <div  className='col-4'>
-                    <FormSearch title={"tên danh mục"}  handleOnchange={handleOnchangeSearch} handleSearch={handleSearchCategory} />
-                    </div>
-                    <div className='col-8'>
-                    <button  style={{float:'right'}} onClick={() => handleOnClickExport()} className="btn btn-success" >Xuất excel <i class="fa-solid fa-file-excel"></i></button>
-                    </div>
+                        <div className='col-4'>
+                            <FormSearch title={"tên danh mục"} handleOnchange={handleOnchangeSearch} handleSearch={handleSearchCategory} />
+                        </div>
+                        <div className='col-8'>
+                            <button style={{ float: 'right' }} onClick={() => handleOnClickExport()} className="btn btn-success" >Xuất excel <i class="fa-solid fa-file-excel"></i></button>
+                        </div>
                     </div>
                     <div className="table-responsive">
                         <table className="table table-bordered" style={{ border: '1' }} width="100%" cellspacing="0">
@@ -136,12 +135,12 @@ const ManageCategory = () => {
                                         return (
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
-                                                <td>{item.value}</td>
-                                                <td>{item.code}</td>
+                                                <td>{item.categoryName}</td>
+                                                <td>{item.categoryId}</td>
                                                 <td>
-                                                    <Link to={`/admin/edit-category/${item.id}`}>Edit</Link>
+                                                    <Link to={`/admin/edit-category/${item.categoryId}`}>Edit</Link>
                                                     &nbsp; &nbsp;
-                                                    <a href="#" onClick={(event) => handleDeleteCategory(event, item.id)} >Delete</a>
+                                                    <a href="#" onClick={(event) => handleDeleteCategory(event, item.categoryId)} >Delete</a>
                                                 </td>
                                             </tr>
                                         )

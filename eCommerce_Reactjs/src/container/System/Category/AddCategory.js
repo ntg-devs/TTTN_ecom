@@ -24,9 +24,10 @@ const AddCategory = (props) => {
         if (id) {
             let fetchDetailCategory = async () => {
                 setisActionADD(false)
-                let allcode = await getDetailAllcodeById(id)
+                let allcode = await getDetailAllcodeById(id, "CATEGORY")
+                console.log("allcode", allcode)
                 if (allcode && allcode.errCode === 0) {
-                    setInputValues({ ...inputValues, ["value"]: allcode.data.value, ["code"]: allcode.data.code })
+                    setInputValues({ ...inputValues, ["value"]: allcode.data.categoryName, ["code"]: allcode.data.categoryId })
                 }
             }
             fetchDetailCategory()
@@ -61,7 +62,8 @@ const AddCategory = (props) => {
             let res = await UpdateAllcodeService({
                 value: inputValues.value,
                 code: inputValues.code,
-                id: id
+                id: id,
+                type: 'CATEGORY'
             })
             if (res && res.errCode === 0) {
                 toast.success("Cập nhật danh mục thành công")
@@ -94,7 +96,9 @@ const AddCategory = (props) => {
                             </div>
                             <div className="form-group col-md-6">
                                 <label htmlFor="inputPassword4">Mã code</label>
-                                <input type="text" value={inputValues.code} name="code" onChange={(event) => handleOnChange(event)} className="form-control" id="inputPassword4" />
+                                <input type="text" disabled={
+                                    isActionADD === true ? false : true
+                                } value={inputValues.code} name="code" onChange={(event) => handleOnChange(event)} className="form-control" id="inputPassword4" />
                             </div>
                         </div>
                         <button type="button" onClick={() => handleSaveCategory()} className="btn btn-primary">Lưu thông tin</button>

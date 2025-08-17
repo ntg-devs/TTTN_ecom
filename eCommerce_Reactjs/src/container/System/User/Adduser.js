@@ -22,43 +22,36 @@ const Adduser = (props) => {
     const [inputValues, setInputValues] = useState({
         email: "",
         password: "",
-        firstName: "",
         lastName: "",
-        address: "",
+        password: "123456",
         phonenumber: "",
         genderId: "",
         roleId: "",
-        id: "",
         dob: "",
+        cccd: ""
     });
 
     let setStateUser = (data) => {
         setInputValues({
             ...inputValues,
-            ["firstName"]: data.firstName,
-            ["lastName"]: data.lastName,
-            ["address"]: data.address,
-            ["phonenumber"]: data.phonenumber,
-            ["genderId"]: data.genderId,
-            ["roleId"]: data.roleId,
-            ["email"]: data.email,
-            ["id"]: data.id,
-            ["dob"]: data.dob,
+            ["lastName"]: data.fullName,
+            ["phonenumber"]: data.phone,
+            ["genderId"]: data.gender,
+            ["roleId"]: data?.Account?.AccountRoles?.Role?.roleName,
+            ["email"]: data?.Account?.email,
+            ["dob"]: data.dateOfBirth,
+            ["roleId"]: data?.Account?.AccountRoles?.Role?.roleName,
         });
-        setbirthday(
-            moment
-                .unix(+data.dob / 1000)
-                .locale("vi")
-                .toDate()
-        );
+
     };
     useEffect(() => {
         if (id) {
             let fetchUser = async () => {
                 setisActionADD(false);
                 let user = await getDetailUserById(id);
+                console.log("user", user);
                 if (user && user.errCode === 0) {
-                    setStateUser(user.data);
+                    setStateUser(user.data[0]);
                 }
             };
             fetchUser();
@@ -69,8 +62,14 @@ const Adduser = (props) => {
         setInputValues({ ...inputValues, [name]: value });
     };
 
-    const { data: dataGender } = useFetchAllcode("GENDER");
-    const { data: dataRole } = useFetchAllcode("ROLE");
+    const dataGender = [
+        { code: "Nam", value: "Nam" },
+        { code: "Nữ", value: "Nữ" },
+    ];
+    const dataRole = [
+        { code: "employee", value: "Nhân viên" },
+        { code: "customer", value: "Khách hàng" },
+    ];
 
     if (
         dataGender &&
@@ -94,17 +93,31 @@ const Adduser = (props) => {
     };
     let handleSaveUser = async () => {
         if (isActionADD === true) {
+            console.log("create new user", {
+                email: inputValues.email,
+                password: inputValues.password,
+                lastName: inputValues.lastName,
+                roleId: inputValues.roleId,
+                gender: inputValues.genderId,
+                phonenumber: inputValues.phonenumber,
+                cccd: inputValues.cccd,
+                dob:
+                    isChangeDate === false
+                        ? inputValues.dob
+                        : new Date(birthday).getTime(),
+            });
             let res = await createNewUser({
                 email: inputValues.email,
                 password: inputValues.password,
-                firstName: inputValues.firstName,
                 lastName: inputValues.lastName,
-                address: inputValues.address,
                 roleId: inputValues.roleId,
-                genderId: inputValues.genderId,
+                gender: inputValues.genderId,
                 phonenumber: inputValues.phonenumber,
-
-                dob: new Date(birthday).getTime(),
+                cccd: inputValues.cccd,
+                dob:
+                    isChangeDate === false
+                        ? inputValues.dob
+                        : new Date(birthday).getTime(),
             });
             if (res && res.errCode === 0) {
                 toast.success("Thêm mới người dùng thành công");
@@ -123,11 +136,20 @@ const Adduser = (props) => {
                 toast.error(res.errMessage);
             }
         } else {
-            let res = await UpdateUserService({
-                id: inputValues.id,
-                firstName: inputValues.firstName,
+            console.log("inputValues", {
+                id: id,
                 lastName: inputValues.lastName,
-                address: inputValues.address,
+                roleId: inputValues.roleId,
+                genderId: inputValues.genderId,
+                phonenumber: inputValues.phonenumber,
+                dob:
+                    isChangeDate === false
+                        ? inputValues.dob
+                        : new Date(birthday).getTime(),
+            });
+            let res = await UpdateUserService({
+                id: id,
+                lastName: inputValues.lastName,
                 roleId: inputValues.roleId,
                 genderId: inputValues.genderId,
                 phonenumber: inputValues.phonenumber,
@@ -187,7 +209,7 @@ const Adduser = (props) => {
                             </div>
                         </div>
                         <div className="form-row">
-                            <div className="form-group col-4">
+                            {/* <div className="form-group col-4">
                                 <label htmlFor="inputEmail4">Họ</label>
                                 <input
                                     type="text"
@@ -197,9 +219,9 @@ const Adduser = (props) => {
                                     className="form-control"
                                     id="inputEmail4"
                                 />
-                            </div>
+                            </div> */}
                             <div className="form-group col-4">
-                                <label htmlFor="inputEmail4">Tên</label>
+                                <label htmlFor="inputEmail4">Họ và Tên</label>
                                 <input
                                     type="text"
                                     value={inputValues.lastName}
@@ -222,19 +244,23 @@ const Adduser = (props) => {
                                     id="inputEmail4"
                                 />
                             </div>
+
+                            <div className="form-group col-4">
+                                <label htmlFor="inputEmail4">
+                                    CCCD
+                                </label>
+                                <input
+                                    type="text"
+                                    value={inputValues.cccd}
+                                    name="cccd"
+                                    onChange={(event) => handleOnChange(event)}
+                                    className="form-control"
+                                    id="inputEmail4"
+                                />
+                            </div>
                         </div>
 
-                        <div className="form-group">
-                            <label htmlFor="inputAddress">Địa chỉ</label>
-                            <input
-                                type="text"
-                                value={inputValues.address}
-                                name="address"
-                                onChange={(event) => handleOnChange(event)}
-                                className="form-control"
-                                id="inputAddress"
-                            />
-                        </div>
+
 
                         <div className="form-row">
                             <div className="form-group col-md-4">
@@ -242,13 +268,14 @@ const Adduser = (props) => {
                                 <DatePicker
                                     className="form-control"
                                     onChange={handleOnChangeDatePicker}
-                                    selected={birthday}
+                                    selected={inputValues.dob}
                                 />
                             </div>
                             <div className="form-group col-md-4">
                                 <label htmlFor="inputState">Giới tính</label>
                                 <select
-                                    value={inputValues.genderId}
+
+                                    value={inputValues.genderId === "Nam" ? "Nam" : "Nữ"}
                                     name="genderId"
                                     onChange={(event) => handleOnChange(event)}
                                     id="inputState"
@@ -271,7 +298,7 @@ const Adduser = (props) => {
                             <div className="form-group col-md-4">
                                 <label htmlFor="inputZip">Quyền</label>
                                 <select
-                                    value={inputValues.roleId}
+                                    value={inputValues.roleId === "employee" ? "employee" : "customer"}
                                     name="roleId"
                                     onChange={(event) => handleOnChange(event)}
                                     id="inputState"
