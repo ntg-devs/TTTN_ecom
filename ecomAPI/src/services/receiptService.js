@@ -114,28 +114,66 @@ let getDetailReceiptById = (id) => {
 let getAllReceipt = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let objectFilter = {}
+            const objectFilter = {
+                // có thể thêm where nếu cần lọc theo ngày / nhà cung cấp...
+                include: [
+                    {
+                        model: db.Supplier,
+                        attributes: ['name', 'phone'],
+                    },
+                    {
+                        model: db.Employee,
+                        attributes: ['employeeId', 'fullName', 'phone'],
+                    },
+                    {
+                        model: db.PurchaseOrderDetail,
+                        attributes: [
+                            'purchaseOrderDetailId',
+                            'productSizeId',
+                            'quantity',
+                            'price',
+                        ],
+                        include: [
+                            {
+                                model: db.ProductSize, // nếu muốn biết size/product
+                                attributes: ['productSizeId', 'productId'],
+                            },
+                        ],
+                    },
+                ],
+                order: [['orderDate', 'DESC']],
+                distinct: true, // để count đúng khi có include
+                raw: false,
+            };
+
+            // phân trang
             if (data.limit && data.offset) {
-                objectFilter.limit = +data.limit
-                objectFilter.offset = +data.offset
+                objectFilter.limit = +data.limit;
+                objectFilter.offset = +data.offset;
             }
 
-            //  if(data.keyword !=='') objectFilter.where = {...objectFilter.where, name: {[Op.substring]: data.keyword  } }
-            let res = await db.Receipt.findAndCountAll(objectFilter)
-            for (let i = 0; i < res.rows.length; i++) {
-                res.rows[i].userData = await db.User.findOne({ where: { id: res.rows[i].userId } })
-                res.rows[i].supplierData = await db.Supplier.findOne({ where: { id: res.rows[i].supplierId } })
+            // ví dụ: lọc theo khoảng ngày nếu FE truyền fromDate/toDate (ISO string)
+            if (data.fromDate && data.toDate) {
+                objectFilter.where = {
+                    ...(objectFilter.where || {}),
+                    orderDate: {
+                        [Op.between]: [new Date(data.fromDate), new Date(data.toDate)],
+                    },
+                };
             }
+
+            const res = await db.PurchaseOrder.findAndCountAll(objectFilter);
+
             resolve({
                 errCode: 0,
-                data: res.rows,
-                count: res.count
-            })
+                data: res.rows,   // đã có Supplier, Employee, PurchaseOrderDetail trong từng row
+                count: res.count,
+            });
         } catch (error) {
-            reject(error)
+            reject(error);
         }
-    })
-}
+    });
+};
 let updateReceipt = (data) => {
     return new Promise(async (resolve, reject) => {
         try {

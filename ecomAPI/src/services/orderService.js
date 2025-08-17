@@ -137,46 +137,56 @@ let createNewOrder = (data) => {
 let getAllOrders = (data) => {
   return new Promise(async (resolve, reject) => {
     try {
-      let objectFilter = {
+      const objectFilter = {
         include: [
-          { model: db.TypeShip, as: "typeShipData" },
-          { model: db.Voucher, as: "voucherData" },
-          { model: db.Allcode, as: "statusOrderData" },
+          { model: db.Customer },                // khách hàng
+          { model: db.ShippingAddress },         // địa chỉ giao hàng
+          { model: db.Voucher },                 // voucher (có thể null)
+          {                                       // chi tiết đơn hàng
+            model: db.OrderDetail,
+            include: [
+              { model: db.ProductSize },         // kích cỡ/sản phẩm (nếu cần sâu hơn, bổ sung association khác)
+              { model: db.AffiliateLink }        // link affiliate (có thể null)
+            ]
+          }
         ],
-        order: [["createdAt", "DESC"]],
-        raw: true,
-        nest: true,
+        order: [['createdAt', 'DESC']],
+        distinct: true,  // rất quan trọng khi có hasMany để count chính xác
+        raw: false,
       };
-      if (data.limit && data.offset) {
+
+      // phân trang
+      if (data.limit != null && data.offset != null) {
         objectFilter.limit = +data.limit;
         objectFilter.offset = +data.offset;
       }
-      if (data.statusId && data.statusId !== "ALL")
-        objectFilter.where = { statusId: data.statusId };
-      let res = await db.OrderProduct.findAndCountAll(objectFilter);
-      for (let i = 0; i < res.rows.length; i++) {
-        let addressUser = await db.AddressUser.findOne({
-          where: { id: res.rows[i].addressUserId },
-        });
-        let shipper = await db.User.findOne({
-          where: { id: res.rows[i].shipperId },
-        });
 
-        if (addressUser) {
-          let user = await db.User.findOne({
-            where: {
-              id: addressUser.userId,
-            },
-          });
-
-          res.rows[i].userData = user;
-          res.rows[i].addressUser = addressUser;
-          res.rows[i].shipperData = shipper;
-        }
+      // lọc theo trạng thái (schema mới: cột 'status' dạng string)
+      if (data.status && data.status !== 'ALL') {
+        objectFilter.where = { ...(objectFilter.where || {}), status: data.status };
       }
+
+      // (tuỳ chọn) lọc theo customerId nếu cần
+      if (data.customerId) {
+        objectFilter.where = { ...(objectFilter.where || {}), customerId: +data.customerId };
+      }
+
+      // (tuỳ chọn) lọc theo khoảng thời gian
+      if (data.fromDate && data.toDate) {
+        objectFilter.where = {
+          ...(objectFilter.where || {}),
+          orderDate: { [Op.between]: [new Date(data.fromDate), new Date(data.toDate)] },
+        };
+      }
+
+      const res = await db.Orders.findAndCountAll(objectFilter);
+
+      // Trả về JSON thuần
+      const rows = res.rows.map(r => r.toJSON());
+
       resolve({
         errCode: 0,
-        data: res.rows,
+        data: rows,
         count: res.count,
       });
     } catch (error) {

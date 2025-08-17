@@ -15,7 +15,8 @@ module.exports = (sequelize, DataTypes) => {
     customerId: { type: DataTypes.INTEGER, allowNull: false, field: 'customer_id' },
     shippingAddressId: { type: DataTypes.INTEGER, allowNull: false, field: 'shipping_address_id' },
     voucherId: { type: DataTypes.INTEGER, allowNull: true, field: 'voucher_id' },
-    orderDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'order_date' },
+    shippingTypeId: { type: DataTypes.INTEGER, allowNull: true, field: 'shipping_type_id' },
+
     status: { type: DataTypes.STRING(50), allowNull: false, defaultValue: 'pending' },
     totalAmount: { type: DataTypes.DECIMAL(15, 2), allowNull: false, field: 'total_amount' },
     createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'created_at' },

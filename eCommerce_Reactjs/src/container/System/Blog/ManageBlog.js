@@ -28,18 +28,19 @@ const ManageBlog = () => {
     const [numberPage, setnumberPage] = useState('')
     const [keyword, setkeyword] = useState('')
     useEffect(() => {
-        
-            loadBlog(keyword)
-    
+
+        loadBlog(keyword)
+
     }, [])
     let loadBlog = async (keyword) => {
         let arrData = await getAllBlog({
-            subjectId:'',
+            subjectId: '',
             limit: PAGINATION.pagerow,
             offset: 0,
-            keyword:keyword
+            keyword: keyword
 
         })
+
         if (arrData && arrData.errCode === 0) {
             setdataBlog(arrData.data)
             setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
@@ -61,10 +62,10 @@ const ManageBlog = () => {
             toast.success("Xóa bài đăng thành công thành công !")
             let arrData = await getAllBlog({
 
-                subjectId:'',
+                subjectId: '',
                 limit: PAGINATION.pagerow,
                 offset: numberPage * PAGINATION.pagerow,
-                keyword:keyword
+                keyword: keyword
             })
             if (arrData && arrData.errCode === 0) {
                 setdataBlog(arrData.data)
@@ -78,10 +79,10 @@ const ManageBlog = () => {
         setnumberPage(number.selected)
         let arrData = await getAllBlog({
 
-            subjectId:'',
+            subjectId: '',
             limit: PAGINATION.pagerow,
             offset: number.selected * PAGINATION.pagerow,
-            keyword:keyword
+            keyword: keyword
 
         })
         if (arrData && arrData.errCode === 0) {
@@ -89,30 +90,30 @@ const ManageBlog = () => {
 
         }
     }
-    let handleSearchBlog = (keyword) =>{
+    let handleSearchBlog = (keyword) => {
         loadBlog(keyword)
         setkeyword(keyword)
     }
-    let handleOnchangeSearch = (keyword) =>{
-        if(keyword === ''){
+    let handleOnchangeSearch = (keyword) => {
+        if (keyword === '') {
             loadBlog(keyword)
             setkeyword(keyword)
         }
     }
-    let handleOnClickExport =async () =>{
+    let handleOnClickExport = async () => {
         let res = await getAllBlog({
-            subjectId:'',
+            subjectId: '',
             limit: '',
-            offset:'',
-            keyword:''
+            offset: '',
+            keyword: ''
         })
-        if(res && res.errCode == 0){
+        if (res && res.errCode == 0) {
             res.data.forEach(element => {
                 element.image = ""
             })
-            await CommonUtils.exportExcel(res.data,"Danh sách bài viết","ListBlog")
+            await CommonUtils.exportExcel(res.data, "Danh sách bài viết", "ListBlog")
         }
-       
+
     }
     return (
         <div className="container-fluid px-4">
@@ -125,14 +126,14 @@ const ManageBlog = () => {
                     Danh sách bài đăng
                 </div>
                 <div className="card-body">
-              
+
                     <div className='row'>
-                    <div  className='col-4'>
-                    <FormSearch title={"tiêu đề"}  handleOnchange={handleOnchangeSearch} handleSearch={handleSearchBlog} />
-                    </div>
-                    <div className='col-8'>
-                    <button  style={{float:'right'}} onClick={() => handleOnClickExport()} className="btn btn-success" >Xuất excel <i class="fa-solid fa-file-excel"></i></button>
-                    </div>
+                        <div className='col-4'>
+                            <FormSearch title={"tiêu đề"} handleOnchange={handleOnchangeSearch} handleSearch={handleSearchBlog} />
+                        </div>
+                        <div className='col-8'>
+                            <button style={{ float: 'right' }} onClick={() => handleOnClickExport()} className="btn btn-success" >Xuất excel <i class="fa-solid fa-file-excel"></i></button>
+                        </div>
                     </div>
                     <div className="table-responsive">
                         <table className="table table-bordered" style={{ border: '1' }} width="100%" cellspacing="0">
@@ -140,7 +141,7 @@ const ManageBlog = () => {
                                 <tr>
                                     <th>STT</th>
                                     <th>Tên bài đăng</th>
-                                    <th>Chủ đề</th>
+                                    {/* <th>Chủ đề</th> */}
                                     <th>Hình ảnh</th>
                                     <th>Thao tác</th>
                                 </tr>
@@ -153,13 +154,13 @@ const ManageBlog = () => {
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
                                                 <td>{item.title}</td>
-                                                <td>{item.subjectData.value}</td>
+                                                {/* <td>{item.subjectData.value}</td> */}
                                                 <td style={{ width: '30%' }} ><div onClick={() => openPreviewImage(item.image)} className="box-img-preview" style={{ backgroundImage: `url(${item.image})`, width: '100%' }}></div></td>
                                                 <td style={{ width: '20%' }}>
-                                                    <Link to={`/admin/edit-blog/${item.id}`}>Edit</Link>
+                                                    <Link to={`/admin/edit-blog/${item.blogId}`}>Edit</Link>
                                                     &nbsp; &nbsp;
 
-                                                    <span onClick={() => handleDeleteBlog(item.id)} style={{ color: '#0E6DFE', cursor: 'pointer' }} >Delete</span>
+                                                    <span onClick={() => handleDeleteBlog(item.blogId)} style={{ color: '#0E6DFE', cursor: 'pointer' }} >Delete</span>
 
 
                                                 </td>

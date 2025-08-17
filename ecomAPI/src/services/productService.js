@@ -84,64 +84,73 @@ let createNewProduct = (data) => {
         }
     })
 }
-let getAllProductAdmin = (data) => {
+let getAllProductAdmin = (data = {}) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let objectFilter = {
 
+            const { limit, offset, sortPrice, sortName, categoryId, keyword } = data;
+
+            // where cho bảng Product
+            const where = {};
+            if (categoryId && categoryId !== 'ALL') {
+                where.categoryId = Number(categoryId);
+            }
+            if (keyword && keyword !== '') {
+                where.name = { [Op.substring]: keyword };
+            }
+
+            // order
+            const order = [];
+            if (sortName === 'true') order.push(['name', 'ASC']);
+            if (sortPrice === 'true') {
+                // sắp theo giá hiển thị: ưu tiên discount_price, fallback original_price
+                order.push([literal('COALESCE(`Product`.`discount_price`,`Product`.`original_price`)'), 'ASC']);
+            }
+
+            const options = {
+                where,
                 include: [
-                    { model: db.Allcode, as: 'brandData', attributes: ['value', 'code'] },
-                    { model: db.Allcode, as: 'categoryData', attributes: ['value', 'code'] },
-                    { model: db.Allcode, as: 'statusData', attributes: ['value', 'code'] },
+                    {
+                        model: db.Category,
+                        attributes: ['categoryId', 'categoryName'],
+                        required: false
+                    },
+                    // Nếu cần kèm size/link thì mở thêm 2 dòng dưới:
+                    // { model: db.ProductSize, attributes: ['productSizeId','size','stock'], required: false },
+                    // { model: db.AffiliateLink, attributes: ['affiliateLinkId','platform','url'], required: false },
                 ],
-                raw: true,
-                nest: true
+                order: order.length ? order : undefined,
+                distinct: true,
+                raw: false            // để count đúng khi có hasMany
+            };
+
+            if (limit != null && offset != null) {
+                options.limit = +limit;
+                options.offset = +offset;
             }
-            if (data.limit && data.offset) {
-                objectFilter.limit = +data.limit
-                objectFilter.offset = +data.offset
-            }
 
-            if (data.categoryId && data.categoryId !== 'ALL') objectFilter.where = { categoryId: data.categoryId }
-            if (data.brandId && data.brandId !== 'ALL') objectFilter.where = { ...objectFilter.where, brandId: data.brandId }
-            if (data.sortName === "true") objectFilter.order = [['name', 'ASC']]
-            if (data.keyword !== '') objectFilter.where = { ...objectFilter.where, name: { [Op.substring]: data.keyword } }
+            const res = await db.Product.findAndCountAll(options);
 
-            let res = await db.Product.findAndCountAll(objectFilter)
-            for (let i = 0; i < res.rows.length; i++) {
-                let objectFilterProductDetail = {
-                    where: { productId: res.rows[i].id }, raw: true
-                }
-
-                res.rows[i].productDetail = await db.ProductDetail.findAll(objectFilterProductDetail)
-
-                for (let j = 0; j < res.rows[i].productDetail.length; j++) {
-                    res.rows[i].productDetail[j].productDetailSize = await db.ProductDetailSize.findAll({ where: { productdetailId: res.rows[i].productDetail[j].id }, raw: true })
-
-                    res.rows[i].price = res.rows[i].productDetail[0].discountPrice
-                    res.rows[i].productDetail[j].productImage = await db.ProductImage.findAll({ where: { productdetailId: res.rows[i].productDetail[j].id }, raw: true })
-                    for (let k = 0; k < res.rows[i].productDetail[j].productImage.length > 0; k++) {
-                        res.rows[i].productDetail[j].productImage[k].image = new Buffer(res.rows[i].productDetail[j].productImage[k].image, 'base64').toString('binary')
-                    }
-                }
-            }
-            if (data.sortPrice && data.sortPrice === "true") {
-
-                res.rows.sort(dynamicSortMultiple("price"))
-            }
+            // chuyển instance -> plain + tính giá hiển thị
+            const rows = res.rows.map(r => {
+                const p = r.get({ plain: true });
+                const price =
+                    p.discountPrice != null ? Number(p.discountPrice) :
+                        (p.originalPrice != null ? Number(p.originalPrice) : null);
+                return { ...p, price };
+            });
 
             resolve({
                 errCode: 0,
-                data: res.rows,
+                data: rows,
                 count: res.count
-            })
-
+            });
 
         } catch (error) {
-            reject(error)
+            reject(error);
         }
-    })
-}
+    });
+};
 let getAllProductUser = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -209,17 +218,19 @@ let UnactiveProduct = (data) => {
                     errMessage: 'Missing required parameter!'
                 })
             } else {
+
                 let product = await db.Product.findOne({
-                    where: { id: data.id },
+                    where: { product_id: data.id },
                     raw: false
                 })
+
                 if (!product) {
                     resolve({
                         errCode: 2,
                         errMessage: `The product isn't exist`
                     })
                 } else {
-                    product.statusId = 'S2';
+                    product.isActive = 0;
                     await product.save();
                     resolve({
                         errCode: 0,
@@ -242,16 +253,17 @@ let ActiveProduct = (data) => {
                 })
             } else {
                 let product = await db.Product.findOne({
-                    where: { id: data.id },
+                    where: { product_id: data.id },
                     raw: false
                 })
+
                 if (!product) {
                     resolve({
                         errCode: 2,
                         errMessage: `The product isn't exist`
                     })
                 } else {
-                    product.statusId = 'S1';
+                    product.isActive = 1;
                     await product.save();
                     resolve({
                         errCode: 0,
@@ -975,7 +987,7 @@ let getProductNew = (limit) => {
                 order: [['createdAt', 'DESC']],
                 raw: true,
                 nest: true
-            })  
+            })
             for (let i = 0; i < res.length; i++) {
                 let objectFilterProductDetail = {
                     where: { productId: res[i].id }, raw: true
@@ -1077,78 +1089,78 @@ let getProductShopCart = (data) => {
 }
 let getProductRecommend = (data) => {
     return new Promise(async (resolve, reject) => {
-        try {
-            let productArr = []
-            if (!data.userId && !data.limit) {
-                resolve({
-                    errCode: 1,
-                    errMessage: 'Missing required parameter!'
-                })
-            } else {
-                let recommender = new jsrecommender.Recommender();
+        // try {
+        //     let productArr = []
+        //     if (!data.userId && !data.limit) {
+        //         resolve({
+        //             errCode: 1,
+        //             errMessage: 'Missing required parameter!'
+        //         })
+        //     } else {
+        //         let recommender = new jsrecommender.Recommender();
 
-                let table = new jsrecommender.Table();
-                let rateList = await db.Comment.findAll({
-                    where: {
-                        star: { [Op.not]: null }
-                    }
-                })
+        //         let table = new jsrecommender.Table();
+        //         let rateList = await db.Comment.findAll({
+        //             where: {
+        //                 star: { [Op.not]: null }
+        //             }
+        //         })
 
-                for (let i = 0; i < rateList.length; i++) {
-                    table.setCell(`${rateList[i].productId}`, `${rateList[i].userId}`, rateList[i].star)
-                }
-                let model = recommender.fit(table);
-                let predicted_table = recommender.transform(table);
+        //         for (let i = 0; i < rateList.length; i++) {
+        //             table.setCell(`${rateList[i].productId}`, `${rateList[i].userId}`, rateList[i].star)
+        //         }
+        //         let model = recommender.fit(table);
+        //         let predicted_table = recommender.transform(table);
 
-                for (let i = 0; i < predicted_table.columnNames.length; ++i) {
-                    let user = predicted_table.columnNames[i];
+        //         for (let i = 0; i < predicted_table.columnNames.length; ++i) {
+        //             let user = predicted_table.columnNames[i];
 
-                    for (let j = 0; j < predicted_table.rowNames.length; ++j) {
-                        let product = predicted_table.rowNames[j];
-                        if (user == data.userId && Math.round(predicted_table.getCell(product, user)) > 3) {
-                            let productdata = await db.Product.findOne({ where: { id: product } })
-                            if (productArr.length == +data.limit) {
-                                break;
-                            } else {
-                                productArr.push(productdata)
-                            }
-
-
-                        }
-
-                    }
-                }
-                if (productArr && productArr.length > 0) {
-                    for (let g = 0; g < productArr.length; g++) {
-                        let objectFilterProductDetail = {
-                            where: { productId: productArr[g].id }, raw: true
-                        }
-
-                        productArr[g].productDetail = await db.ProductDetail.findAll(objectFilterProductDetail)
-
-                        for (let j = 0; j < productArr[g].productDetail.length; j++) {
-                            productArr[g].productDetail[j].productDetailSize = await db.ProductDetailSize.findAll({ where: { productdetailId: productArr[g].productDetail[j].id }, raw: true })
-
-                            productArr[g].price = productArr[g].productDetail[0].discountPrice
-                            productArr[g].productDetail[j].productImage = await db.ProductImage.findAll({ where: { productdetailId: productArr[g].productDetail[j].id }, raw: true })
-                            for (let k = 0; k < productArr[g].productDetail[j].productImage.length > 0; k++) {
-                                productArr[g].productDetail[j].productImage[k].image = new Buffer(productArr[g].productDetail[j].productImage[k].image, 'base64').toString('binary')
-                            }
-                        }
-                    }
-                }
+        //             for (let j = 0; j < predicted_table.rowNames.length; ++j) {
+        //                 let product = predicted_table.rowNames[j];
+        //                 if (user == data.userId && Math.round(predicted_table.getCell(product, user)) > 3) {
+        //                     let productdata = await db.Product.findOne({ where: { id: product } })
+        //                     if (productArr.length == +data.limit) {
+        //                         break;
+        //                     } else {
+        //                         productArr.push(productdata)
+        //                     }
 
 
-                resolve({
-                    errCode: 0,
-                    data: productArr
-                })
+        //                 }
 
-            }
+        //             }
+        //         }
+        //         if (productArr && productArr.length > 0) {
+        //             for (let g = 0; g < productArr.length; g++) {
+        //                 let objectFilterProductDetail = {
+        //                     where: { productId: productArr[g].id }, raw: true
+        //                 }
 
-        } catch (error) {
-            reject(error)
-        }
+        //                 productArr[g].productDetail = await db.ProductDetail.findAll(objectFilterProductDetail)
+
+        //                 for (let j = 0; j < productArr[g].productDetail.length; j++) {
+        //                     productArr[g].productDetail[j].productDetailSize = await db.ProductDetailSize.findAll({ where: { productdetailId: productArr[g].productDetail[j].id }, raw: true })
+
+        //                     productArr[g].price = productArr[g].productDetail[0].discountPrice
+        //                     productArr[g].productDetail[j].productImage = await db.ProductImage.findAll({ where: { productdetailId: productArr[g].productDetail[j].id }, raw: true })
+        //                     for (let k = 0; k < productArr[g].productDetail[j].productImage.length > 0; k++) {
+        //                         productArr[g].productDetail[j].productImage[k].image = new Buffer(productArr[g].productDetail[j].productImage[k].image, 'base64').toString('binary')
+        //                     }
+        //                 }
+        //             }
+        //         }
+
+
+        //         resolve({
+        //             errCode: 0,
+        //             data: productArr
+        //         })
+
+        //     }
+
+        // } catch (error) {
+        //     reject(error)
+        // }
     })
 }
 module.exports = {
