@@ -66,51 +66,92 @@ let createNewReceiptDetail = (data) => {
         }
     })
 }
+//
 let getDetailReceiptById = (id) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!id) {
-                resolve({
+            // 1. Lấy purchase order
+            const purchaseOrder = await db.PurchaseOrder.findOne({
+                where: { purchaseOrderId: id },
+                raw: true,
+            });
+
+            if (!purchaseOrder) {
+                return resolve({
                     errCode: 1,
-                    errMessage: 'Missing required parameter !'
-                })
-            } else {
+                    errMessage: "Purchase order not found"
+                });
+            }
 
-                let res = await db.Receipt.findOne({
-                    where: { id: id }
+            // 2. Lấy supplier
+            const supplier = await db.Supplier.findByPk(purchaseOrder.supplierId, {
+                attributes: ['supplierId', 'name', 'address', 'email', 'phone'],
+                raw: true,
+            });
 
-                })
-                res.receiptDetail = await db.ReceiptDetail.findAll({ where: { receiptId: id } })
-                if (res.receiptDetail && res.receiptDetail.length > 0) {
-                    for (let i = 0; i < res.receiptDetail.length; i++) {
+            // 3. Lấy employee
+            const employee = await db.Employee.findByPk(purchaseOrder.employeeId, {
+                attributes: ['employeeId', 'fullName', 'phone'],
+                raw: true,
+            });
 
-                        let productDetailSize = await db.ProductDetailSize.findOne({
-                            where: { id: res.receiptDetail[i].productDetailSizeId },
-                            include: [
-                                { model: db.Allcode, as: 'sizeData', attributes: ['value', 'code'] },
+            // 4. Lấy chi tiết order
+            const details = await db.PurchaseOrderDetail.findAll({
+                where: { purchaseOrderId: id },
+                attributes: ['purchaseOrderDetailId', 'quantity', 'price', 'productSizeId'], // ✅ phải có productSizeId
+                raw: true,
+            });
 
-                            ],
-                            raw: true,
-                            nest: true
-                        })
-                        res.receiptDetail[i].productDetailSizeData = productDetailSize
-                        res.receiptDetail[i].productDetailData = await db.ProductDetail.findOne({ where: { id: productDetailSize.productdetailId } })
-                        res.receiptDetail[i].productData = await db.Product.findOne({ where: { id: res.receiptDetail[i].productDetailData.productId } })
+            // 5. Với mỗi detail → lấy productSize, product, size
+            const detailWithProducts = [];
+            for (const d of details) {
+                const productSize = await db.ProductSize.findByPk(d.productSizeId, {
+                    attributes: ['productSizeId', 'stock', 'productId', 'sizeId'], // ✅ lấy cả productId, sizeId
+                    raw: true,
+                });
 
-                    }
+                let product = null;
+                let size = null;
+
+                if (productSize) {
+                    product = await db.Product.findByPk(productSize.productId, {
+                        attributes: ['productId', 'name', 'description', 'originalPrice', 'discountPrice', 'isActive'],
+                        raw: true,
+                    });
+
+                    size = await db.Size.findByPk(productSize.sizeId, {
+                        attributes: ['sizeId', 'name'],
+                        raw: true,
+                    });
                 }
 
-
-                resolve({
-                    errCode: 0,
-                    data: res
-                })
+                detailWithProducts.push({
+                    ...d,
+                    productSize,
+                    product,
+                    size,
+                });
             }
+
+            // 6. Build object kết
+            const result = {
+                ...purchaseOrder,
+                supplier,
+                employee,
+                details: detailWithProducts,
+            };
+
+            resolve({
+                errCode: 0,
+                data: result,
+            });
         } catch (error) {
-            reject(error)
+            console.error(error);
+            reject(error);
         }
-    })
-}
+    });
+};
+
 let getAllReceipt = (data) => {
     return new Promise(async (resolve, reject) => {
         try {

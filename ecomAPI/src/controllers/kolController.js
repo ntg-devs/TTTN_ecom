@@ -123,7 +123,7 @@ const kolController = {
       const { reason, total_followers } = req.body || {};
 
       // Get admin ID from JWT token
-      const reviewerId = req.user.id;
+      const reviewerId = req.body.reviewerId || req.user.id;
 
       // Call service to update status
       const response = await kolService.updateApplicationStatus({

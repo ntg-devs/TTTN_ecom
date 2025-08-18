@@ -89,7 +89,7 @@ const ManageKolApplications = () => {
     const formatDate = (dateString) => {
         return moment(dateString).format('DD/MM/YYYY HH:mm');
     };
-
+    console.log(applications)
     // Render pagination
     const renderPagination = () => {
         const { currentPage, totalPages } = pagination;
@@ -281,18 +281,18 @@ const ManageKolApplications = () => {
                                 <tbody>
                                     {applications.map((app) => (
                                         <tr key={app.id}>
-                                            <td>{app.id}</td>
+                                            <td>{app.kolId}</td>
                                             <td>
-                                                {app.user ? (
+                                                {app.user.fullName ? (
                                                     <div className="d-flex align-items-center">
                                                         {app.user.image && (
                                                             <img
                                                                 src={app.user.image}
-                                                                alt={`${app.user.firstName} ${app.user.lastName}`}
+                                                                alt={`${app.user.fullName}`}
                                                                 className="user-avatar me-2"
                                                             />
                                                         )}
-                                                        <span>{app.user.firstName} {app.user.lastName}</span>
+                                                        <span>{app.user.fullName} </span>
                                                     </div>
                                                 ) : (
                                                     <span className="text-muted">Người dùng không xác định</span>
@@ -307,7 +307,7 @@ const ManageKolApplications = () => {
                                             <td>{formatDate(app.createdAt)}</td>
                                             <td>
                                                 <Link
-                                                    to={`/admin/kol/applications/${app.id}`}
+                                                    to={`/admin/kol/applications/${app.kolId}`}
                                                     className="btn btn-sm btn-primary"
                                                 >
                                                     <i className="fas fa-eye me-1"></i> Xem chi tiết

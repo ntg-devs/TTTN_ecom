@@ -10,6 +10,7 @@ module.exports = (sequelize, DataTypes) => {
   KolTier.init({
     tierId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true, field: 'tier_id' },
     tierName: { type: DataTypes.STRING, allowNull: false, field: 'tier_name' },
+    quantity: { type: DataTypes.INTEGER, allowNull: false, field: 'quantity' },
     commissionRate: { type: DataTypes.DECIMAL(5, 2), allowNull: false, validate: { min: 0 }, field: 'commission_rate' },
     createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'created_at' },
     updatedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'updated_at' }

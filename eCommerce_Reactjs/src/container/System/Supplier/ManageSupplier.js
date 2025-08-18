@@ -44,6 +44,7 @@ const ManageSupplier = () => {
             setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
         }
     }
+    console.log(dataSupplier)
     let handleDeleteSupplier = async (event, id) => {
         event.preventDefault();
         let res = await deleteSupplierService({
@@ -65,7 +66,7 @@ const ManageSupplier = () => {
                 setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
             }
 
-        } else toast.error("Xóa nhà cung cấp thất bại")
+        } else toast.error("Xóa nhà cung cấp thất bại do đã nhập hàng từ nhà cung cấp này!")
     }
     let handleChangePage = async (number) => {
         setnumberPage(number.selected)
@@ -147,9 +148,9 @@ const ManageSupplier = () => {
                                                 <td>{item.email}</td>
                                                 <td>{item.address}</td>
                                                 <td>
-                                                    <Link to={`/admin/edit-Supplier/${item.id}`}>Edit</Link>
+                                                    <Link to={`/admin/edit-Supplier/${item.supplierId}`}>Edit</Link>
                                                     &nbsp; &nbsp;
-                                                    <a href="#" onClick={(event) => handleDeleteSupplier(event, item.id)} >Delete</a>
+                                                    <a href="#" onClick={(event) => handleDeleteSupplier(event, item.supplierId)} >Delete</a>
                                                 </td>
                                             </tr>
                                         )

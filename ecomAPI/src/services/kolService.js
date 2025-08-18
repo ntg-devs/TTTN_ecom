@@ -1,6 +1,6 @@
 import db from "../models/index";
 import bcrypt from "bcryptjs";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 import emailService from "./emailService";
 const { Op } = require("sequelize");
 const salt = bcrypt.genSaltSync(10);
@@ -30,10 +30,10 @@ let hashUserPasswordFromBcrypt = (password) => {
       let hashPassword = await bcrypt.hashSync(password, salt);
       resolve(hashPassword);
     } catch (error) {
-      reject(error)
+      reject(error);
     }
-  })
-}
+  });
+};
 
 // Email Templates
 const EMAIL_TEMPLATES = {
@@ -194,68 +194,92 @@ const kolService = {
       const offset = (page - 1) * limit;
 
       // Get total count for pagination
-      const totalCount = await db.KolRequest.count({
+      const totalCount = await db.KolInfo.count({
         where: whereClause,
       });
 
-      // Get applications with pagination
-      const applications = await db.KolRequest.findAll({
+      // Get applications (không dùng include)
+      const applications = await db.KolInfo.findAll({
         where: whereClause,
         limit: limit,
         offset: offset,
         order: [["createdAt", "DESC"]],
         attributes: [
-          "id",
-          "userId",
+          "kolId",
+          "accountId",
           "status",
           "createdAt",
           "updatedAt",
-          "reviewedBy",
-          "reviewDate",
+          "approvedAt",
+          "rejectReason",
+          "fullName",
+          "phone",
+          "gender",
+          "dateOfBirth",
+          "avatar",
+          "fbLink",
+          "tiktokLink",
+          "instagramLink",
+          "youtubeLink",
+          "otherLink",
         ],
+        raw: true,
       });
 
-      // Get user information for each application
-      const applicationData = await Promise.all(
-        applications.map(async (app) => {
-          const user = await db.User.findOne({
-            where: { id: app.userId },
-            attributes: [
-              "id",
-              "email",
-              "firstName",
-              "lastName",
-              "phoneNumber",
-              "image",
-            ],
-          });
+      // Lấy toàn bộ accountId từ applications
+      const accountIds = applications.map((app) => app.accountId);
 
-          // Convert image buffer to base64 if exists
-          let userImage = null;
-          if (user && user.image) {
-            userImage = new Buffer(user.image, "base64").toString("binary");
-          }
+      // Query riêng bảng Account
+      const accounts = await db.Account.findAll({
+        where: { accountId: accountIds },
+        attributes: ["accountId", "email", "isActive", "createdAt"],
+        raw: true,
+      });
 
-          return {
-            id: app.id,
-            status: app.status,
-            createdAt: app.createdAt,
-            updatedAt: app.updatedAt,
-            reviewedBy: app.reviewedBy,
-            reviewDate: app.reviewDate,
-            user: user
-              ? {
-                id: user.id,
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                phoneNumber: user.phoneNumber,
-                image: userImage,
+      // Convert account array -> object để tra nhanh
+      const accountMap = accounts.reduce((acc, account) => {
+        acc[account.accountId] = account;
+        return acc;
+      }, {});
+
+      // Map dữ liệu trả về
+      const applicationData = applications.map((app) => {
+        let avatarBase64 = null;
+        if (app.avatar) {
+          avatarBase64 = Buffer.from(app.avatar).toString("base64");
+        }
+
+        const account = accountMap[app.accountId] || null;
+
+        return {
+          kolId: app.kolId,
+          status: app.status,
+          createdAt: app.createdAt,
+          updatedAt: app.updatedAt,
+          approvedAt: app.approvedAt,
+          rejectReason: app.rejectReason,
+          user: account
+            ? {
+                accountId: account.accountId,
+                email: account.email,
+                isActive: account.isActive,
+                createdAt: account.createdAt,
+                fullName: app.fullName,
+                phone: app.phone,
+                gender: app.gender,
+                dateOfBirth: app.dateOfBirth,
+                avatar: avatarBase64,
+                socialLinks: {
+                  fb: app.fbLink,
+                  tiktok: app.tiktokLink,
+                  instagram: app.instagramLink,
+                  youtube: app.youtubeLink,
+                  other: app.otherLink,
+                },
               }
-              : null,
-          };
-        })
-      );
+            : null,
+        };
+      });
 
       // Calculate pagination info
       const totalPages = Math.ceil(totalCount / limit);
@@ -281,6 +305,7 @@ const kolService = {
       };
     }
   },
+
   /**
    * Get KOL application details by ID
    * @param {string} applicationId - KOL application ID
@@ -295,71 +320,85 @@ const kolService = {
         };
       }
 
-      // Find the KOL request
-      const kolRequest = await db.KolRequest.findOne({
-        where: { id: applicationId },
+      // Tìm KolInfo theo applicationId (kolId)
+      const kolInfo = await db.KolInfo.findOne({
+        where: { kolId: applicationId },
+        attributes: [
+          "kolId",
+          "accountId",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "approvedAt",
+          "rejectReason",
+          "fullName",
+          "phone",
+          "gender",
+          "dateOfBirth",
+          "avatar",
+          "fbLink",
+          "tiktokLink",
+          "instagramLink",
+          "youtubeLink",
+          "otherLink",
+        ],
+        raw: true,
       });
 
-      if (!kolRequest) {
+      if (!kolInfo) {
         return {
           errCode: 2,
           errMessage: "KOL application not found",
         };
       }
 
-      // Find the user associated with the application
-      const user = await db.User.findOne({
-        where: { id: kolRequest.userId },
-        attributes: [
-          "id",
-          "email",
-          "firstName",
-          "lastName",
-          "phoneNumber",
-          "image",
-          "kol_status",
-        ],
+      // Query account tương ứng
+      const account = await db.Account.findOne({
+        where: { accountId: kolInfo.accountId },
+        attributes: ["accountId", "email", "isActive", "createdAt"],
+        raw: true,
       });
 
-      if (!user) {
-        return {
-          errCode: 3,
-          errMessage: "User not found",
-        };
+      // Convert avatar -> base64 nếu có
+      let avatarBase64 = null;
+      if (kolInfo.avatar) {
+        avatarBase64 = Buffer.from(kolInfo.avatar).toString("base64");
       }
 
-      // Convert image buffer to base64 if exists
-      let userImage = null;
-      if (user.image) {
-        userImage = new Buffer(user.image, "base64").toString("binary");
-      }
+      // Map dữ liệu trả về
+      const applicationDetail = {
+        kolId: kolInfo.kolId,
+        status: kolInfo.status,
+        createdAt: kolInfo.createdAt,
+        updatedAt: kolInfo.updatedAt,
+        approvedAt: kolInfo.approvedAt,
+        rejectReason: kolInfo.rejectReason,
+        user: account
+          ? {
+              accountId: account.accountId,
+              email: account.email,
+              isActive: account.isActive,
+              createdAt: account.createdAt,
+              fullName: kolInfo.fullName,
+              phone: kolInfo.phone,
+              gender: kolInfo.gender,
+              dateOfBirth: kolInfo.dateOfBirth,
+              avatar: avatarBase64,
+              socialLinks: {
+                fb: kolInfo.fbLink,
+                tiktok: kolInfo.tiktokLink,
+                instagram: kolInfo.instagramLink,
+                youtube: kolInfo.youtubeLink,
+                other: kolInfo.otherLink,
+              },
+            }
+          : null,
+      };
 
-      // Return complete application details
       return {
         errCode: 0,
-        errMessage: "KOL application details retrieved successfully",
-        data: {
-          application: {
-            id: kolRequest.id,
-            status: kolRequest.status,
-            socialMediaLinks: kolRequest.socialMediaLinks,
-            identificationDocument: kolRequest.identificationDocument,
-            createdAt: kolRequest.createdAt,
-            updatedAt: kolRequest.updatedAt,
-            reviewedBy: kolRequest.reviewedBy,
-            reviewDate: kolRequest.reviewDate,
-            reason: kolRequest.reason,
-          },
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            phoneNumber: user.phoneNumber,
-            image: userImage,
-            kolStatus: user.kol_status,
-          },
-        },
+        errMessage: "KOL application detail retrieved successfully",
+        data: applicationDetail,
       };
     } catch (error) {
       console.error("Error in getApplicationDetails service:", error);
@@ -369,6 +408,7 @@ const kolService = {
       };
     }
   },
+
   /**
    * Register a user as a KOL
    * @param {Object} data - Registration data
@@ -379,13 +419,14 @@ const kolService = {
    */
   registerKol: async (data) => {
     try {
-      const { socialMediaLinks,
+      const {
+        socialMediaLinks,
         fullName,
         email,
         password,
         dob,
         gender,
-        phone
+        phone,
       } = data;
       let hashPassword = await hashUserPasswordFromBcrypt(password);
 
@@ -393,21 +434,19 @@ const kolService = {
         email: email,
         password: hashPassword,
         lastName: fullName,
-        roleId: 'R2',
+        roleId: "R2",
         genderId: gender,
         phonenumber: phone,
         dob: null,
         isActiveEmail: 0,
-        statusId: 'S1',
-        usertoken: '',
-      })
+        statusId: "S1",
+        usertoken: "",
+      });
 
       // // Check if user exists
       // const user = await db.User.findOne({
       //   where: { id: userId },
       // });
-
-
 
       if (!user) {
         return {
@@ -459,7 +498,7 @@ const kolService = {
         },
         {
           where: {
-            id: user.id
+            id: user.id,
           },
         }
       );
@@ -494,9 +533,12 @@ const kolService = {
    * @param {number} data.reviewerId - ID of the staff member reviewing the application
    * @returns {Promise<Object>} - Response object
    */
+  //
   updateApplicationStatus: async (data) => {
     try {
       const { requestId, status, reason, reviewerId, total_followers } = data;
+
+      console.log("dfdkhfkdh", data);
 
       // Validate input
       if (!requestId || !status || !reviewerId) {
@@ -514,8 +556,8 @@ const kolService = {
       }
 
       // Find the KOL request
-      const kolRequest = await db.KolRequest.findOne({
-        where: { id: requestId },
+      const kolRequest = await db.KolInfo.findOne({
+        where: { kolId: requestId },
       });
 
       if (!kolRequest) {
@@ -525,38 +567,41 @@ const kolService = {
         };
       }
 
-      // Find the user
-      const user = await db.User.findOne({
-        where: { id: kolRequest.userId },
+      const tierId = total_followers > 10000 ? 2 : 1;
+
+      const reviewByEmployee = await db.Employee.findOne({
+        where: { accountId: reviewerId },
       });
 
-      if (!user) {
-        return {
-          errCode: 4,
-          errMessage: "User not found",
-        };
-      }
-
-      // Update KOL request status
-      await db.KolRequest.update(
+      await db.KolInfo.update(
         {
           status: status,
-          reason: status === "rejected" ? reason : null,
-          reviewedBy: reviewerId,
-          reviewDate: new Date(),
+          rejectReason: reason || null,
+          employeeId: reviewByEmployee.employeeId,
+          tierId: tierId,
           updatedAt: new Date(),
         },
         {
-          where: { id: requestId },
+          where: { kolId: requestId },
         }
       );
 
+      const account = await db.Account.findOne({
+        where: { accountId: kolRequest.accountId },
+      });
+
+      const user = {
+        email: account.email,
+        firstName: "",
+        lastName: kolRequest.fullName,
+      };
+
+      console.log("user", user);
+
+      // Update KOL request status
+
       // Update user's KOL status
       const updateData = prepareUserUpdateData(status, total_followers);
-
-      await db.User.update(updateData, {
-        where: { id: kolRequest.userId },
-      });
 
       // Send notification email
       await kolService.sendStatusNotification(user, status, reason);
@@ -837,7 +882,7 @@ const kolService = {
     try {
       const allDrawKOL = await db.drawkol.findAll({
         where: { kolId },
-        order: [['createdAt', 'DESC']], // lấy mới nhất trước, tùy chọn
+        order: [["createdAt", "DESC"]], // lấy mới nhất trước, tùy chọn
       });
 
       return {
