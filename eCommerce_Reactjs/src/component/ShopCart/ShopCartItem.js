@@ -37,6 +37,17 @@ function ShopCartItem(props) {
         }
 
     }
+
+    function normalizeImageSrc(src) {
+        if (typeof src !== 'string' || !src.startsWith('data:image')) return src;
+        try {
+            const inner = atob(src.split(',')[1]);       // giải base64 phần sau dấu phẩy
+            return inner.startsWith('data:image') ? inner : src; // nếu bên trong lại là data URL thì dùng cái bên trong
+        } catch {
+            return src;
+        }
+    }
+
     useEffect(() => {
         setquantity(props.quantity)
     }, [props.quantity])
@@ -59,13 +70,17 @@ function ShopCartItem(props) {
             toast.error(res.errMessage)
         }
     }
+
+
     return (
         <tr>
 
             <td>
                 <div className="media">
                     <div className="d-flex">
-                        <img style={{ width: '147px', height: '100px', objectFit: 'cover' }} src={props.image} alt="" />
+                        <img style={{ width: '147px', height: '100px', objectFit: 'cover' }}
+                            src={normalizeImageSrc(props.image[0]?.image)}
+                            alt="" />
                     </div>
                     <div className="media-body">
                         <p className="text-justify">{props.name} </p>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, NavLink, useNavigate, useParams } from "react-router-dom";
+import { data, Link, NavLink, useNavigate, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
     getAllAddressUserByUserIdService,
@@ -66,9 +66,10 @@ function OrderHomePage(props) {
 
     let loadDataAddress = async (userId) => {
         let res = await getAllAddressUserByUserIdService(userId);
+
         if (res && res.errCode === 0) {
             setdataAddressUser(res.data);
-            setaddressUserId(res.data[0].id);
+            setaddressUserId(res.data[0].addressId);
         }
     };
     let closeModaAddressUser = () => {
@@ -85,7 +86,7 @@ function OrderHomePage(props) {
             shipAdress: data.shipAdress,
             shipEmail: data.shipEmail,
             shipPhonenumber: data.shipPhonenumber,
-            userId: userId,
+            userId: data.id,
         });
         if (res && res.errCode === 0) {
             toast.success("Thêm địa chỉ thành công !");
@@ -107,6 +108,7 @@ function OrderHomePage(props) {
     let closeModalFromVoucherItem = () => {
         setisOpenModal(false);
     };
+    console.log("dataCart", dataCart);
     let totalPriceDiscount = (price, discount) => {
         if (
             discount.voucherData.typeVoucherOfVoucherData.typeVoucher ===
@@ -114,7 +116,7 @@ function OrderHomePage(props) {
         ) {
             if (
                 (price * discount.voucherData.typeVoucherOfVoucherData.value) /
-                    100 >
+                100 >
                 discount.voucherData.typeVoucherOfVoucherData.maxValue
             ) {
                 return (
@@ -126,7 +128,7 @@ function OrderHomePage(props) {
                     price -
                     (price *
                         discount.voucherData.typeVoucherOfVoucherData.value) /
-                        100
+                    100
                 );
             }
         } else {
@@ -141,17 +143,12 @@ function OrderHomePage(props) {
     };
 
     let handleSaveOrder = async () => {
-        if (!dataTypeShip.id) {
+        if (!dataTypeShip.shippingTypeId) {
             toast.error("Chưa chọn đơn vị vận chuyển");
+
+
         } else {
-            let result = [];
-            dataCart.map((item, index) => {
-                let object = {};
-                object.productId = item.productdetailsizeId;
-                object.quantity = item.quantity;
-                object.realPrice = item.productDetail.discountPrice;
-                result.push(object);
-            });
+
 
             // Get affiliate attribution data
             const affiliateAttribution = getAffiliateAttribution();
@@ -161,14 +158,16 @@ function OrderHomePage(props) {
                 let res = await createNewOrderService({
                     orderdate: Date.now(),
                     addressUserId: addressUserId,
-                    isPaymentOnlien: activeTypePayment === 1 ? 1 : 0,
-                    typeShipId: dataTypeShip.id,
+                    isPaymentOnlien: activeTypePayment === 1 ? 2 : 1,
+                    typeShipId: dataTypeShip.shippingTypeId,
                     voucherId: dataVoucher.voucherId,
                     note: note,
                     userId: userId,
-                    arrDataShopCart: result,
+                    arrDataShopCart: dataCart,
                     affiliateAttribution: affiliateAttribution, // Include affiliate attribution
+                    totalPrice: price + +priceShip
                 });
+                console.log("thanh toan khi nhan hang", res);
                 if (res && res.errCode === 0) {
                     toast.success("Đặt hàng thành công");
                     dispatch(getItemCartStart(userId));
@@ -188,7 +187,7 @@ function OrderHomePage(props) {
                 if (activeTypeOnlPayment === 1) {
                     let res = await paymentOrderService({
                         total: total,
-                        result: result,
+                        result: dataCart,
                         affiliateAttribution: affiliateAttribution,
                     });
                     if (res && res.errCode == 0) {
@@ -198,17 +197,17 @@ function OrderHomePage(props) {
                                 orderdate: Date.now(),
                                 addressUserId: addressUserId,
                                 isPaymentOnlien:
-                                    activeTypePayment === 1 ? 1 : 0,
+                                    activeTypePayment === 1 ? 2 : 1,
                                 typeShipId: dataTypeShip.id,
                                 voucherId: dataVoucher.voucherId,
                                 note: note,
                                 userId: userId,
-                                arrDataShopCart: result,
+                                arrDataShopCart: dataCart,
                                 total: total,
                                 affiliateAttribution: affiliateAttribution, // Include affiliate attribution
                             })
                         );
-                    
+
                         window.location.href = res.link;
                     }
                 } else {
@@ -218,19 +217,19 @@ function OrderHomePage(props) {
                                 orderdate: Date.now(),
                                 addressUserId: addressUserId,
                                 isPaymentOnlien:
-                                    activeTypePayment === 1 ? 1 : 0,
+                                    activeTypePayment === 1 ? 2 : 1,
                                 typeShipId: dataTypeShip.id,
                                 voucherId: dataVoucher.voucherId,
                                 note: note,
                                 userId: userId,
-                                arrDataShopCart: result,
+                                arrDataShopCart: dataCart,
                                 affiliateAttribution: affiliateAttribution,
                                 total:
                                     dataVoucher && dataVoucher.voucherData
                                         ? totalPriceDiscount(
-                                              price,
-                                              dataVoucher
-                                          ) + priceShip
+                                            price,
+                                            dataVoucher
+                                        ) + priceShip
                                         : price + +priceShip,
                             },
                         },
@@ -239,6 +238,12 @@ function OrderHomePage(props) {
             }
         }
     };
+
+    let hanldeOnChangeTypeShip = (item) => {
+        setpriceShip(item.cost);
+        dispatch(ChooseTypeShipStart(item));
+    };
+
 
     return (
         <>
@@ -280,12 +285,12 @@ function OrderHomePage(props) {
                                             {dataAddressUser &&
                                                 dataAddressUser.length > 0 &&
                                                 dataAddressUser[stt]
-                                                    .shipName}{" "}
+                                                    ?.receiverName}{" "}
                                             (
                                             {dataAddressUser &&
                                                 dataAddressUser.length > 0 &&
                                                 dataAddressUser[0]
-                                                    .shipPhonenumber}
+                                                    ?.receiverPhone}
                                             )
                                         </span>
                                     </div>
@@ -293,7 +298,7 @@ function OrderHomePage(props) {
                                         <span>
                                             {dataAddressUser &&
                                                 dataAddressUser.length > 0 &&
-                                                dataAddressUser[stt].shipAdress}
+                                                dataAddressUser[stt]?.addressText}
                                         </span>
                                     </div>
                                 </>
@@ -311,7 +316,7 @@ function OrderHomePage(props) {
                                                         className="form-check-input"
                                                         checked={
                                                             item.id ===
-                                                            addressUserId
+                                                                addressUserId
                                                                 ? true
                                                                 : false
                                                         }
@@ -334,7 +339,7 @@ function OrderHomePage(props) {
                                                                 {item.shipName}{" "}
                                                                 (
                                                                 {
-                                                                    item.shipPhonenumber
+                                                                    item?.shipPhonenumber
                                                                 }
                                                                 )
                                                             </span>
@@ -342,7 +347,7 @@ function OrderHomePage(props) {
                                                         <div className="content-center">
                                                             <span>
                                                                 {
-                                                                    item.shipAdress
+                                                                    item?.shipAdress
                                                                 }
                                                             </span>
                                                         </div>
@@ -410,35 +415,30 @@ function OrderHomePage(props) {
                                                 dataCart.length > 0 &&
                                                 dataCart.map((item, index) => {
                                                     price +=
-                                                        item.quantity *
-                                                        item.productDetail
-                                                            .discountPrice;
+                                                        item?.quantity *
+                                                        item?.product?.discountPrice;
 
-                                                    let name = `${item.productData.name} - ${item.productDetail.nameDetail} - ${item.productdetailsizeData.sizeData.value}`;
+                                                    let name = `${item?.product?.name}  - size : ${item?.productSize?.size?.sizeName}`;
                                                     return (
                                                         <ShopCartItem
-                                                            isOrder={true}
-                                                            id={item.id}
-                                                            userId={userId}
+                                                            isOrder={false}
+                                                            id={item.cartItemId}
+
                                                             productdetailsizeId={
-                                                                item
-                                                                    .productdetailsizeData
-                                                                    .id
+                                                                item.productdetailsizeData
+                                                                    ?.id
                                                             }
                                                             key={index}
                                                             name={name}
                                                             price={
-                                                                item
-                                                                    .productDetail
-                                                                    .discountPrice
+                                                                item.product?.discountPrice
+
                                                             }
-                                                            quantity={
-                                                                item.quantity
-                                                            }
+                                                            quantity={item?.quantity}
                                                             image={
-                                                                item
-                                                                    .productDetailImage[0]
-                                                                    .image
+                                                                item?.product
+                                                                    ?.images
+
                                                             }
                                                         />
                                                     );
@@ -454,34 +454,28 @@ function OrderHomePage(props) {
                                         typeShip.length > 0 &&
                                         typeShip.map((item, index) => {
                                             return (
-                                                <div
-                                                    key={index}
-                                                    className="form-check"
-                                                >
+                                                <div key={index} className="form-check">
                                                     <input
                                                         className="form-check-input"
                                                         checked={
-                                                            item.id ===
-                                                            dataTypeShip.id
+                                                            item.shippingTypeId === dataTypeShip.shippingTypeId
                                                                 ? true
                                                                 : false
                                                         }
                                                         type="radio"
-                                                        name="typeshipRadios"
-                                                        id={`typeshipRadios${index}`}
+                                                        name="exampleRadios"
+                                                        id="exampleRadios1"
                                                         onChange={() =>
-                                                            handleChooseTypeShip(
-                                                                item
-                                                            )
+                                                            hanldeOnChangeTypeShip(item)
                                                         }
                                                     />
                                                     <label
                                                         className="form-check-label"
-                                                        for={`typeshipRadios${index}`}
+                                                        for="exampleRadios1"
                                                     >
-                                                        {item.type} -{" "}
+                                                        {item.name} -{" "}
                                                         {CommonUtils.formatter.format(
-                                                            item.price
+                                                            item.cost
                                                         )}
                                                     </label>
                                                 </div>
@@ -540,16 +534,16 @@ function OrderHomePage(props) {
 
                                         <span className="text-price">
                                             {dataVoucher &&
-                                            dataVoucher.voucherData
+                                                dataVoucher.voucherData
                                                 ? CommonUtils.formatter.format(
-                                                      totalPriceDiscount(
-                                                          price,
-                                                          dataVoucher
-                                                      ) + priceShip
-                                                  )
+                                                    totalPriceDiscount(
+                                                        price,
+                                                        dataVoucher
+                                                    ) + priceShip
+                                                )
                                                 : CommonUtils.formatter.format(
-                                                      price + +priceShip
-                                                  )}
+                                                    price + +priceShip
+                                                )}
                                         </span>
                                     </div>
                                 </div>
@@ -620,12 +614,12 @@ function OrderHomePage(props) {
                                 <div>
                                     {dataVoucher && dataVoucher.voucherData
                                         ? CommonUtils.formatter.format(
-                                              price -
-                                                  totalPriceDiscount(
-                                                      price,
-                                                      dataVoucher
-                                                  )
-                                          )
+                                            price -
+                                            totalPriceDiscount(
+                                                price,
+                                                dataVoucher
+                                            )
+                                        )
                                         : CommonUtils.formatter.format(0)}
                                 </div>
                             </div>
@@ -642,14 +636,14 @@ function OrderHomePage(props) {
                                     $
                                     {dataVoucher && dataVoucher.voucherData
                                         ? CommonUtils.formatter.format(
-                                              totalPriceDiscount(
-                                                  price,
-                                                  dataVoucher
-                                              ) + priceShip
-                                          )
+                                            totalPriceDiscount(
+                                                price,
+                                                dataVoucher
+                                            ) + priceShip
+                                        )
                                         : CommonUtils.formatter.format(
-                                              price + +priceShip
-                                          )}
+                                            price + +priceShip
+                                        )}
                                 </div>
                             </div>
                             <div className="box-flex">

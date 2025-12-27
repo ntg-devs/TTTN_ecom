@@ -1,35 +1,46 @@
 'use strict';
+const { Model } = require('sequelize');
 
-const {
-    Model
-} = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-    class Product extends Model {
+  class Product extends Model {
+    static associate(models) {
+      Product.belongsTo(models.Category, { foreignKey: 'categoryId' });
+      Product.hasMany(models.ProductSize, { foreignKey: 'productId' });
+      Product.hasMany(models.AffiliateLink, { foreignKey: 'productId' });
+      Product.hasMany(models.ProductImage, { foreignKey: 'productId' });
+    }
+  }
 
-        static associate(models) {
-            Product.belongsTo(models.Allcode, { foreignKey: 'categoryId', targetKey: 'code', as: 'categoryData' })
-            Product.belongsTo(models.Allcode, { foreignKey: 'brandId', targetKey: 'code', as: 'brandData' })
-            Product.belongsTo(models.Allcode, { foreignKey: 'statusId', targetKey: 'code', as: 'statusData' })
-            Product.hasMany(models.ProductDetail, { foreignKey: 'productId', as: 'productDetails' })
-            Product.hasMany(models.AffiliateLink, { foreignKey: 'productId', as: 'affiliateLinks' })
-            Product.hasMany(models.AffiliateClick, { foreignKey: 'productId', as: 'affiliateClicks' })
-            Product.hasMany(models.AffiliateOrders, { foreignKey: 'productId', as: 'affiliateOrders' })
-        }
-    };
-    Product.init({
-        name: DataTypes.STRING,
-        contentHTML: DataTypes.TEXT('long'),
-        contentMarkdown: DataTypes.TEXT('long'),
-        statusId: DataTypes.STRING,
-        categoryId: DataTypes.STRING,
-        view: DataTypes.INTEGER,
+  Product.init({
+    productId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true, field: 'product_id' },
+    categoryId: { type: DataTypes.INTEGER, allowNull: false, field: 'category_id' },
+    name: { type: DataTypes.STRING, allowNull: false },
+    description: { type: DataTypes.TEXT, allowNull: true },
+    originalPrice: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      validate: { min: 0 },
+      field: 'original_price'
+    },
+    discountPrice: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      validate: { min: 0 },
+      field: 'discount_price'
+    },
+    madeBy: { type: DataTypes.STRING, allowNull: true, field: 'made_by' },
+    material: { type: DataTypes.STRING, allowNull: true },
+    isActive: { type: DataTypes.BOOLEAN, defaultValue: true, field: 'is_active' },
+    createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'created_at' },
+    updatedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'updated_at' }
+  }, {
+    sequelize,
+    modelName: 'Product',
+    tableName: 'product',
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
+  });
 
-        madeby: DataTypes.STRING,
-        material: DataTypes.STRING,
-        brandId: DataTypes.STRING
-    }, {
-        sequelize,
-        modelName: 'Product',
-    });
-    return Product;
+  return Product;
 };

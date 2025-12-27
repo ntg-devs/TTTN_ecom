@@ -26,7 +26,7 @@ const SideBar = () => {
                         </Link>
 
                         <div className="sb-sidenav-menu-heading">Quản lý</div>
-                        {user && user.roleId === "R1" &&
+                        {user && user.roleId === 1 &&
                             <>
                                 <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
                                     <div className="sb-nav-link-icon"><i className="fas fa-users"></i></div>
@@ -50,17 +50,17 @@ const SideBar = () => {
                                         <Link to={'/admin/add-category'} className="nav-link" >Thêm danh mục</Link>
                                     </nav>
                                 </div>
-                                <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseBrand" aria-expanded="false" aria-controls="collapseLayouts">
+                                {/* <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseBrand" aria-expanded="false" aria-controls="collapseLayouts">
                                     <div className="sb-nav-link-icon"><i className="far fa-copyright"></i></div>
                                     Quản lý nhãn hàng
                                     <div className="sb-sidenav-collapse-arrow"><i className="fas fa-angle-down" /></div>
-                                </a>
-                                <div className="collapse" id="collapseBrand" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                </a> */}
+                                {/* <div className="collapse" id="collapseBrand" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
                                     <nav className="sb-sidenav-menu-nested nav">
                                         <Link to={'/admin/list-brand'} className="nav-link" >Danh sách nhãn hàng</Link>
                                         <Link to={'/admin/add-brand'} className="nav-link" >Thêm nhãn hàng</Link>
                                     </nav>
-                                </div>
+                                </div> */}
                                 <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseProduct" aria-expanded="false" aria-controls="collapseLayouts">
                                     <div className="sb-nav-link-icon"><i className="fas fa-tshirt"></i></div>
                                     Quản lý sản phẩm
@@ -84,7 +84,8 @@ const SideBar = () => {
                                         <Link to={'/admin/add-banner'} className="nav-link" >Thêm băng rôn</Link>
                                     </nav>
                                 </div>
-                                <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseSubject" aria-expanded="false" aria-controls="collapseLayouts">
+
+                                {/* <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseSubject" aria-expanded="false" aria-controls="collapseLayouts">
                                     <div className="sb-nav-link-icon"><i className="fab fa-blogger"></i></div>
                                     Quản lý chủ đề
                                     <div className="sb-sidenav-collapse-arrow"><i className="fas fa-angle-down" /></div>
@@ -94,7 +95,19 @@ const SideBar = () => {
                                         <Link to={'/admin/list-subject'} className="nav-link" >Danh sách chủ đề</Link>
                                         <Link to={'/admin/add-subject'} className="nav-link" >Thêm chủ đề</Link>
                                     </nav>
-                                </div>
+                                </div> */}
+                                    {/* <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseSubject" aria-expanded="false" aria-controls="collapseLayouts">
+                                        <div className="sb-nav-link-icon"><i className="fab fa-blogger"></i></div>
+                                        Quản lý chủ đề
+                                        <div className="sb-sidenav-collapse-arrow"><i className="fas fa-angle-down" /></div>
+                                    </a>
+                                    <div className="collapse" id="collapseSubject" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                                        <nav className="sb-sidenav-menu-nested nav">
+                                            <Link to={'/admin/list-subject'} className="nav-link" >Danh sách chủ đề</Link>
+                                            <Link to={'/admin/add-subject'} className="nav-link" >Thêm chủ đề</Link>
+                                        </nav>
+                                    </div> */}
+
                                 <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseBlog" aria-expanded="false" aria-controls="collapseLayouts">
                                     <div className="sb-nav-link-icon"><i className="fas fa-feather-alt"></i></div>
                                     Quản lý bài đăng
@@ -124,9 +137,9 @@ const SideBar = () => {
                                 </a>
                                 <div className="collapse" id="collapseVoucher" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
                                     <nav className="sb-sidenav-menu-nested nav">
-                                        <Link to={'/admin/list-typevoucher'} className="nav-link" >DS loại khuyến mãi</Link>
+                                        {/* <Link to={'/admin/list-typevoucher'} className="nav-link" >DS khuyến mãi</Link> */}
                                         <Link to={'/admin/list-voucher'} className="nav-link" >DS mã khuyến mãi</Link>
-                                        <Link to={'/admin/add-typevoucher'} className="nav-link" >Thêm loại khuyến mãi</Link>
+                                        {/* <Link to={'/admin/add-typevoucher'} className="nav-link" >Thêm khuyến mãi</Link> */}
                                         <Link to={'/admin/add-voucher'} className="nav-link" >Thêm mã khuyến mãi</Link>
                                     </nav>
                                 </div>
@@ -176,7 +189,7 @@ const SideBar = () => {
                                 <Link to={'/admin/chat'} className="nav-link" >Messenger</Link>
                             </nav>
                         </div>
-                        
+
                         <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseKOL" aria-expanded="false" aria-controls="collapseLayouts">
                             <div className="sb-nav-link-icon"><i className="fas fa-users-cog"></i></div>
                             Quản lý KOL
@@ -190,7 +203,7 @@ const SideBar = () => {
                                 <Link to={'/admin/kol/withdraw'} className="nav-link">Rút tiền KOL</Link>
                             </nav>
                         </div>
-                        {user && user.roleId === "R1" &&
+                        {user && user.roleId === 1 &&
                             <>
                                 <a className="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseStatistic" aria-expanded="false" aria-controls="collapseLayouts">
                                     <div className="sb-nav-link-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
@@ -216,7 +229,7 @@ const SideBar = () => {
                     </div>
                 </div >
                 {/* <div className="sb-sidenav-footer">
-                   
+
                     Trang quản trị
                 </div> */}
             </nav >

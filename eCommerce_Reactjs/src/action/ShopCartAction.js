@@ -6,11 +6,13 @@ import { toast } from 'react-toastify';
 export const addItemCartStart = (data) => {
     return async (dispatch, getState) => {
         try {
+
             let res = await addShopCartService(data);
 
             if (res && res.errCode === 0) {
 
                 dispatch(getItemCartStart(data.userId))
+
                 dispatch(addItemCartSuccess())
 
 
@@ -39,6 +41,7 @@ export const getItemCartStart = (id) => {
     return async (dispatch, getState) => {
         try {
             let res = await getAllShopCartByUserIdService(id);
+            console.log('res', res)
             if (res && res.errCode === 0) {
                 dispatch(getItemCartSuccess(res.data))
 

@@ -26,7 +26,7 @@ const ManageOrder = () => {
 
     }, [])
 
-    console.log("dataOrder", dataOrder)
+
     let loadOrderData = (statusId) => {
         try {
             let fetchData = async () => {
@@ -37,10 +37,11 @@ const ManageOrder = () => {
                     statusId: statusId
 
                 })
-                if (arrData && arrData.errCode === 0) {
-                    setdataOrder(arrData.data)
-                    setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
-                }
+                console.log('list order', arrData)
+                // if (arrData && arrData.errCode === 0) {
+                //     setdataOrder(arrData.data)
+                //     setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
+                // }
             }
             fetchData();
         } catch (error) {

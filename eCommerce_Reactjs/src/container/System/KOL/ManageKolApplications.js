@@ -64,7 +64,7 @@ const ManageKolApplications = () => {
     // Handle page change
     const handlePageChange = (newPage) => {
         if (newPage < 1 || newPage > pagination.totalPages) return;
-        
+
         setFilters({
             ...filters,
             page: newPage
@@ -89,96 +89,96 @@ const ManageKolApplications = () => {
     const formatDate = (dateString) => {
         return moment(dateString).format('DD/MM/YYYY HH:mm');
     };
-
+    console.log(applications)
     // Render pagination
     const renderPagination = () => {
         const { currentPage, totalPages } = pagination;
-        
+
         if (totalPages <= 1) return null;
-        
+
         return (
             <nav aria-label="Page navigation">
                 <ul className="pagination justify-content-center">
                     <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                        <button 
-                            className="page-link" 
+                        <button
+                            className="page-link"
                             onClick={() => handlePageChange(currentPage - 1)}
                             disabled={currentPage === 1}
                         >
                             Previous
                         </button>
                     </li>
-                    
+
                     {/* First page */}
                     {currentPage > 2 && (
                         <li className="page-item">
-                            <button 
-                                className="page-link" 
+                            <button
+                                className="page-link"
                                 onClick={() => handlePageChange(1)}
                             >
                                 1
                             </button>
                         </li>
                     )}
-                    
+
                     {/* Ellipsis */}
                     {currentPage > 3 && (
                         <li className="page-item disabled">
                             <span className="page-link">...</span>
                         </li>
                     )}
-                    
+
                     {/* Previous page */}
                     {currentPage > 1 && (
                         <li className="page-item">
-                            <button 
-                                className="page-link" 
+                            <button
+                                className="page-link"
                                 onClick={() => handlePageChange(currentPage - 1)}
                             >
                                 {currentPage - 1}
                             </button>
                         </li>
                     )}
-                    
+
                     {/* Current page */}
                     <li className="page-item active">
                         <span className="page-link">{currentPage}</span>
                     </li>
-                    
+
                     {/* Next page */}
                     {currentPage < totalPages && (
                         <li className="page-item">
-                            <button 
-                                className="page-link" 
+                            <button
+                                className="page-link"
                                 onClick={() => handlePageChange(currentPage + 1)}
                             >
                                 {currentPage + 1}
                             </button>
                         </li>
                     )}
-                    
+
                     {/* Ellipsis */}
                     {currentPage < totalPages - 2 && (
                         <li className="page-item disabled">
                             <span className="page-link">...</span>
                         </li>
                     )}
-                    
+
                     {/* Last page */}
                     {currentPage < totalPages - 1 && (
                         <li className="page-item">
-                            <button 
-                                className="page-link" 
+                            <button
+                                className="page-link"
                                 onClick={() => handlePageChange(totalPages)}
                             >
                                 {totalPages}
                             </button>
                         </li>
                     )}
-                    
+
                     <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                        <button 
-                            className="page-link" 
+                        <button
+                            className="page-link"
                             onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
                         >
@@ -192,48 +192,46 @@ const ManageKolApplications = () => {
 
     return (
         <div className="container-fluid px-4">
-            <h1 className="mt-4">KOL Applications</h1>
+            <h1 className="mt-4">Quản lý KOL</h1>
             <ol className="breadcrumb mb-4">
-                <li className="breadcrumb-item">
-                    <Link to="/admin">Dashboard</Link>
-                </li>
-                <li className="breadcrumb-item active">KOL Applications</li>
+
+                <li className="breadcrumb-item active">Quản lý KOL</li>
             </ol>
-            
+
             {/* Filters */}
             <div className="card mb-4">
                 <div className="card-header">
                     <i className="fas fa-filter me-1"></i>
-                    Filters
+                    Bộ lọc
                 </div>
                 <div className="card-body">
                     <div className="row">
                         <div className="col-md-4">
                             <div className="form-group">
-                                <label htmlFor="statusFilter">Status</label>
-                                <select 
-                                    className="form-select" 
+                                <label htmlFor="statusFilter">Trạng thái</label>
+                                <select
+                                    className="form-select"
                                     id="statusFilter"
                                     name="status"
                                     value={filters.status}
                                     onChange={handleFilterChange}
                                 >
-                                    <option value="">All Statuses</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="rejected">Rejected</option>
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="pending">Đang chờ duyệt</option>
+                                    <option value="approved">Đã duyệt</option>
+                                    <option value="rejected">Đã từ chối</option>
                                 </select>
                             </div>
                         </div>
                         <div className="col-md-4">
                             <div className="form-group mt-4">
-                                <button 
+                                <button
                                     className="btn btn-primary"
                                     onClick={() => fetchApplications()}
                                 >
-                                    Apply Filters
+                                    Lọc dữ liệu
                                 </button>
-                                <button 
+                                <button
                                     className="btn btn-secondary ms-2"
                                     onClick={() => {
                                         setFilters({
@@ -242,30 +240,30 @@ const ManageKolApplications = () => {
                                         });
                                     }}
                                 >
-                                    Reset
+                                    Làm mới
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             {/* Applications Table */}
             <div className="card mb-4">
                 <div className="card-header">
                     <i className="fas fa-table me-1"></i>
-                    KOL Applications
+                    Quản lý KOL
                 </div>
                 <div className="card-body">
                     {loading ? (
                         <div className="text-center">
                             <div className="spinner-border text-primary" role="status">
-                                <span className="visually-hidden">Loading...</span>
+                                <span className="visually-hidden">Đang tải...</span>
                             </div>
                         </div>
                     ) : applications.length === 0 ? (
                         <div className="alert alert-info">
-                            No applications found.
+                            Không tìm thấy đơn đăng ký nào.
                         </div>
                     ) : (
                         <div className="table-responsive">
@@ -273,31 +271,31 @@ const ManageKolApplications = () => {
                                 <thead>
                                     <tr>
                                         <th>ID</th>
-                                        <th>User</th>
+                                        <th>Người đăng ký làm KOL</th>
                                         <th>Email</th>
-                                        <th>Status</th>
-                                        <th>Application Date</th>
-                                        <th>Actions</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ngày đăng ký</th>
+                                        <th>Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {applications.map((app) => (
                                         <tr key={app.id}>
-                                            <td>{app.id}</td>
+                                            <td>{app.kolId}</td>
                                             <td>
-                                                {app.user ? (
+                                                {app.user.fullName ? (
                                                     <div className="d-flex align-items-center">
                                                         {app.user.image && (
-                                                            <img 
-                                                                src={app.user.image} 
-                                                                alt={`${app.user.firstName} ${app.user.lastName}`}
+                                                            <img
+                                                                src={app.user.image}
+                                                                alt={`${app.user.fullName}`}
                                                                 className="user-avatar me-2"
                                                             />
                                                         )}
-                                                        <span>{app.user.firstName} {app.user.lastName}</span>
+                                                        <span>{app.user.fullName} </span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-muted">Unknown User</span>
+                                                    <span className="text-muted">Người dùng không xác định</span>
                                                 )}
                                             </td>
                                             <td>{app.user ? app.user.email : 'N/A'}</td>
@@ -308,11 +306,11 @@ const ManageKolApplications = () => {
                                             </td>
                                             <td>{formatDate(app.createdAt)}</td>
                                             <td>
-                                                <Link 
-                                                    to={`/admin/kol/applications/${app.id}`}
+                                                <Link
+                                                    to={`/admin/kol/applications/${app.kolId}`}
                                                     className="btn btn-sm btn-primary"
                                                 >
-                                                    <i className="fas fa-eye me-1"></i> View
+                                                    <i className="fas fa-eye me-1"></i> Xem chi tiết
                                                 </Link>
                                             </td>
                                         </tr>
@@ -321,7 +319,7 @@ const ManageKolApplications = () => {
                             </table>
                         </div>
                     )}
-                    
+
                     {/* Pagination */}
                     {renderPagination()}
                 </div>

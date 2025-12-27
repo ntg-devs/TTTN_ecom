@@ -15,13 +15,13 @@ import {
 } from "react-router-dom";
 
 const ManageReceipt = () => {
-  
+
     const [dataReceipt, setdataReceipt] = useState([])
     const [count, setCount] = useState('')
     const [numberPage, setnumberPage] = useState('')
     useEffect(() => {
         try {
-           
+
             fetchData();
         } catch (error) {
             console.log(error)
@@ -31,26 +31,27 @@ const ManageReceipt = () => {
     let fetchData = async () => {
         let arrData = await getAllReceipt({
 
-           
+
             limit: PAGINATION.pagerow,
             offset: 0,
-           
+
 
         })
+        console.log('list recip', arrData)
         if (arrData && arrData.errCode === 0) {
             setdataReceipt(arrData.data)
             setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
         }
     }
-    
+
     let handleChangePage = async (number) => {
         setnumberPage(number.selected)
         let arrData = await getAllReceipt({
 
-          
+
             limit: PAGINATION.pagerow,
             offset: number.selected * PAGINATION.pagerow,
-            
+
 
         })
         if (arrData && arrData.errCode === 0) {
@@ -58,17 +59,17 @@ const ManageReceipt = () => {
 
         }
     }
-    
-    let handleOnClickExport =async () =>{
+
+    let handleOnClickExport = async () => {
         let res = await getAllReceipt({
             limit: '',
             offset: '',
-           
+
         })
-        if(res && res.errCode == 0){
-            await CommonUtils.exportExcel(res.data,"Danh sách nhập hàng","ListReceipt")
+        if (res && res.errCode == 0) {
+            await CommonUtils.exportExcel(res.data, "Danh sách nhập hàng", "ListReceipt")
         }
-       
+
     }
     return (
         <div className="container-fluid px-4">
@@ -81,12 +82,12 @@ const ManageReceipt = () => {
                     Danh sách nhập hàng
                 </div>
                 <div className="card-body">
-               
+
                     <div className='row'>
-                   
-                    <div className='col-12'>
-                    <button  style={{float:'right'}} onClick={() => handleOnClickExport()} className="btn btn-success mb-2" >Xuất excel <i class="fa-solid fa-file-excel"></i></button>
-                    </div>
+
+                        <div className='col-12'>
+                            <button style={{ float: 'right' }} onClick={() => handleOnClickExport()} className="btn btn-success mb-2" >Xuất excel <i class="fa-solid fa-file-excel"></i></button>
+                        </div>
                     </div>
                     <div className="table-responsive">
                         <table className="table table-bordered" style={{ border: '1' }} width="100%" cellspacing="0">
@@ -108,14 +109,14 @@ const ManageReceipt = () => {
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
                                                 <td>{moment.utc(item.createdAt).local().format('DD/MM/YYYY HH:mm:ss')}</td>
-                                                <td>{item.supplierData.name}</td>
-                                                <td>{item.supplierData.phonenumber}</td>
-                                                <td>{item.userData.firstName +" "+item.userData.lastName}</td>
-                                              
+                                                <td>{item?.Supplier?.name}</td>
+                                                <td>{item?.Supplier?.phone}</td>
+                                                <td>{item?.Employee?.fullName}</td>
+
                                                 <td>
-                                                    <Link to={`/admin/detail-receipt/${item.id}`}>view</Link>
+                                                    <Link to={`/admin/detail-receipt/${item.supplierId}`}>view</Link>
                                                     &nbsp; &nbsp;
-                                                   
+
                                                 </td>
                                             </tr>
                                         )

@@ -41,14 +41,14 @@ export const fetchKolStatus = () => {
         }
 
         try {
-            dispatch(fetchKolStatusStart());
-            const response = await getKolStatus();
-            
-            if (response && response.errCode === 0) {
-                dispatch(fetchKolStatusSuccess(response.data));
-            } else {
-                dispatch(fetchKolStatusFailure(response?.errMessage || 'Failed to fetch KOL status'));
-            }
+            // dispatch(fetchKolStatusStart());
+            // const response = await getKolStatus();
+
+            // if (response && response.errCode === 0) {
+            //     dispatch(fetchKolStatusSuccess(response.data));
+            // } else {
+            //     dispatch(fetchKolStatusFailure(response?.errMessage || 'Failed to fetch KOL status'));
+            // }
         } catch (error) {
             console.error('Error fetching KOL status:', error);
             dispatch(fetchKolStatusFailure('Error fetching KOL status'));

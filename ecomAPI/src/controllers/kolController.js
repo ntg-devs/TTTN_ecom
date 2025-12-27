@@ -63,17 +63,17 @@ const kolController = {
   handleKolRegistration: async (req, res) => {
     try {
       // Get data from request body
-      const { socialMediaLinks, identificationDocument } = req.body;
+      const { socialMediaLinks, fullName,
+        email,
+        password,
+        dob,
+        gender,
+        phone } = req.body;
 
       // Get user ID from JWT token (set by middleware)
-      const userId = req.user.id;
 
-      if (!userId) {
-        return res.status(401).json({
-          errCode: 1,
-          errMessage: "User not authenticated",
-        });
-      }
+
+
 
       // Validate required fields
       if (!socialMediaLinks || Object.keys(socialMediaLinks).length === 0) {
@@ -83,22 +83,18 @@ const kolController = {
         });
       }
 
-      if (
-        !identificationDocument ||
-        !identificationDocument.documentType ||
-        !identificationDocument.documentNumber
-      ) {
-        return res.status(400).json({
-          errCode: 3,
-          errMessage: "Identification document details are required",
-        });
-      }
+
 
       // Call service to handle registration
       const response = await kolService.registerKol({
-        userId,
         socialMediaLinks,
-        identificationDocument,
+        fullName,
+        email,
+        password,
+        dob,
+        gender,
+        phone
+
       });
 
       return res.status(200).json(response);
@@ -127,7 +123,7 @@ const kolController = {
       const { reason, total_followers } = req.body || {};
 
       // Get admin ID from JWT token
-      const reviewerId = req.user.id;
+      const reviewerId = req.body.reviewerId || req.user.id;
 
       // Call service to update status
       const response = await kolService.updateApplicationStatus({
@@ -265,25 +261,25 @@ const kolController = {
   },
 
   handleGetAllRequestDrawByKOL: async (req, res) => {
-  try {
-    console.log(req.body)
-    const { kolId } = req.body;
-    if (!kolId) {
-      return res.status(400).json({
-        errCode: 1,
-        errMessage: "kolId không được để trống",
+    try {
+      console.log(req.body)
+      const { kolId } = req.body;
+      if (!kolId) {
+        return res.status(400).json({
+          errCode: 1,
+          errMessage: "kolId không được để trống",
+        });
+      }
+      const response = await kolService.getAllRequestDrawByKOL(kolId);
+      return res.status(200).json(response);
+    } catch (error) {
+      console.error("Error getting KOL request draw:", error);
+      return res.status(500).json({
+        errCode: -1,
+        errMessage: "Error from server",
       });
     }
-    const response = await kolService.getAllRequestDrawByKOL(kolId);
-    return res.status(200).json(response);
-  } catch (error) {
-    console.error("Error getting KOL request draw:", error);
-    return res.status(500).json({
-      errCode: -1,
-      errMessage: "Error from server",
-    });
-  }
-},
+  },
 
 };
 

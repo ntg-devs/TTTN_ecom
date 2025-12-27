@@ -5,9 +5,21 @@ import { getDetailAddressUserByIdService } from '../../services/userService';
 import { Modal, ModalHeader, ModalFooter, ModalBody, Button } from 'reactstrap';
 
 const AddressUsersModal = (props) => {
+
+    const [user, setUser] = useState({});
     const [inputValues, setInputValues] = useState({
         shipName: '', shipAdress: '', shipEmail: '', shipPhonenumber: '', isActionUpdate: false
     });
+
+    useEffect(() => {
+        const userData = JSON.parse(localStorage.getItem("userData"));
+        if (userData) {
+
+            //fetchProductFeature(userData.id);
+            setUser(userData);
+        }
+    }, []);
+
     useEffect(() => {
         let id = props.addressUserId
         if (id) {
@@ -38,13 +50,14 @@ const AddressUsersModal = (props) => {
             , ["shipEmail"]: '', ["shipPhonenumber"]: ''
         })
     }
+
     let handleSaveInfor = () => {
         props.sendDataFromModalAddress({
             shipName: inputValues.shipName,
             shipAdress: inputValues.shipAdress,
             shipEmail: inputValues.shipEmail,
             shipPhonenumber: inputValues.shipPhonenumber,
-            id: props.addressUserId,
+            id: user.customerId,
             isActionUpdate: inputValues.isActionUpdate,
         })
         setInputValues({

@@ -156,92 +156,98 @@ let getDetailProductById = async (req, res) => {
                 });
             }
 
-            // Lấy sản phẩm + tăng view
-            let product = await db.Product.findOne({
-                where: { id: productId },
+            const options = {
+                where: { productId: Number(productId) },
                 include: [
-                    { model: db.Allcode, as: "categoryData" },
-                    { model: db.Allcode, as: "brandData" },
-                    { model: db.Allcode, as: "statusData" },
+                    {
+                        model: db.Category,
+                        attributes: ['categoryId', 'categoryName'],
+                        required: false
+                    },
+                    {
+                        model: db.ProductImage,
+                        attributes: ['image', 'description'],
+                        required: false,
+                        separate: true
+                    },
+                    {
+                        model: db.ProductSize,
+                        required: false,
+                        separate: true,
+                        include: [
+                            {
+                                model: db.Size,
+                                required: false,
+                            }
+                        ]
+                    }
                 ],
-                raw: false, // để cập nhật view
-                nest: true,
-            });
+                distinct: true,
+                raw: false
+            };
 
-            if (!product) {
+            const productInst = await db.Product.findOne(options);
+            if (!productInst) {
                 return res.status(200).json({
                     errCode: 2,
                     errMessage: "Product not found!",
                 });
             }
 
-            // Tăng lượt xem
-            product.view = (product.view || 0) + 1;
-            await product.save();
+            // to plain
+            const product = productInst.get({ plain: true });
 
-            // Lấy ProductDetail
-            let productDetail = await db.ProductDetail.findAll({
-                where: { productId },
-                raw: false,
-            });
-            product = product.toJSON(); // chuyển về JSON để gán thêm
-            product.productDetail = productDetail;
-
-            // Duyệt qua từng ProductDetail
-            for (let i = 0; i < product.productDetail.length; i++) {
-                const detail = product.productDetail[i].toJSON();
-
-                // Hình ảnh
-                detail.productImage = await db.ProductImage.findAll({
-                    where: { productdetailId: detail.id },
-                });
-                detail.productImage.forEach(img => {
-                    img.image = new Buffer(img.image, 'base64').toString('binary');
-                });
-
-                // Kích thước
-                detail.productDetailSize = await db.ProductDetailSize.findAll({
-                    where: { productdetailId: detail.id },
-                    raw: false,
-                });
-
-                // Thêm sizeData + tính tồn kho cho mỗi size
-                for (let j = 0; j < detail.productDetailSize.length; j++) {
-                    const sizeItem = detail.productDetailSize[j];
-                    const sizeData = await db.Allcode.findOne({ where: { code: sizeItem.sizeId } });
-                    sizeItem.setDataValue("sizeData", sizeData);
-
-                    // ======== TÍNH STOCK =========
-                    let quantity = 0;
-
-                    const receiptDetails = await db.ReceiptDetail.findAll({
-                        where: { productDetailSizeId: sizeItem.id },
-                    });
-
-                    const orderDetails = await db.OrderDetail.findAll({
-                        where: { productId: sizeItem.id }, // đảm bảo productId này là id của ProductDetailSize
-                    });
-
-                    receiptDetails.forEach(item => {
-                        quantity += item.quantity;
-                    });
-
-                    for (const od of orderDetails) {
-                        const order = await db.OrderProduct.findOne({ where: { id: od.orderId } });
-                        if (order && order.statusId !== 'S7') {
-                            quantity -= od.quantity;
-                        }
+            // Convert ảnh BLOB -> base64 data URL
+            if (Array.isArray(product.ProductImages)) {
+                product.ProductImages = product.ProductImages.map(img => {
+                    if (img?.image && Buffer.isBuffer(img.image)) {
+                        const base64 = img.image.toString('base64');
+                        return { ...img, image: `data:image/jpeg;base64,${base64}` };
                     }
-
-                    sizeItem.setDataValue("stock", quantity);
-                }
-
-                product.productDetail[i] = detail;
+                    return img;
+                });
             }
+
+            // Tổng đã bán (chỉ tính đơn hoàn tất)
+            let totalSold = 0;
+            try {
+                const sold = await db.OrderDetail.sum('quantity', {
+                    include: [
+                        {
+                            model: db.Orders,
+                            attributes: [],
+                            required: true,
+                            where: { status: 'completed' }
+                        },
+                        {
+                            model: db.ProductSize,
+                            attributes: [],
+                            required: true,
+                            where: { productId: Number(productId) }
+                        }
+                    ],
+                    raw: true
+                });
+                totalSold = Number(sold || 0);
+            } catch (e) {
+                totalSold = 0;
+            }
+
+            // Tổng tồn kho (cộng từ các dòng ProductSizes)
+            const totalStock = Array.isArray(product.ProductSizes)
+                ? product.ProductSizes.reduce((acc, ps) => acc + Number(ps?.stock || 0), 0)
+                : 0;
+
+            // Số SP còn lại = tổng tồn - đã bán (chặn âm)
+            const remaining = Math.max(totalStock - totalSold, 0);
 
             return res.status(200).json({
                 errCode: 0,
-                data: product,
+                data: {
+                    ...product,
+                    totalSold,
+                    remaining,
+                },
             });
         });
     } catch (error) {

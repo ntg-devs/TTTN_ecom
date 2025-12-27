@@ -53,11 +53,7 @@ function ShopPage(props) {
                                         handleRecevieDataCategory
                                     }
                                 />
-                                <Brand
-                                    handleRecevieDataBrand={
-                                        handleRecevieDataBrand
-                                    }
-                                />
+
                             </div>
                         </div>
                     </div>

@@ -9,23 +9,25 @@ let handleCreateNewAllCode = (data) => {
                     errMessage: 'Missing required parameters !'
                 })
             } else {
-
-                let res = await db.Allcode.findOne({
-                    where: { code: data.code }
-                })
-
-                if (res) {
-                    resolve({
-                        errCode: 2,
-                        errMessage: 'Mã code đã tồn tại !'
+                if (data.type && data.type === "CATEGORY") {
+                    let res = await db.Category.findOne({
+                        where: { category_id: data.code }
                     })
-                } else {
-                    await db.Allcode.create({
-                        type: data.type,
-                        value: data.value,
-                        code: data.code
-                    })
+
+                    if (res) {
+                        resolve({
+                            errCode: 2,
+                            errMessage: 'Mã code đã tồn tại !'
+                        })
+                    } else {
+                        await db.Category.create({
+                            categoryName: data.value,
+                            category_id: data.code
+                        })
+                    }
+
                 }
+
 
                 resolve({
                     errCode: 0,
@@ -46,10 +48,14 @@ let getAllCodeService = (typeInput) => {
                     errMessage: 'Missing required parameters !'
                 })
             } else {
+                if (typeInput === "CATEGORY") {
+                    let allCategory = await db.Category.findAll();
+                    resolve({
+                        errCode: 0,
+                        data: allCategory
+                    })
+                }
 
-                let allcode = await db.Allcode.findAll({
-                    where: { type: typeInput }
-                })
                 resolve({
                     errCode: 0,
                     data: allcode
@@ -69,17 +75,20 @@ let handleUpdateAllCode = (data) => {
                     errMessage: 'Missing required parameters !'
                 })
             } else {
-                let res = await db.Allcode.findOne({
-                    where: {
-                        id: data.id
-                    },
-                    raw: false
-                })
-                if (res) {
-                    res.value = data.value
-                    res.code = data.code
-                    await res.save();
+                console.log(data)
+                if (data.type && data.type === "CATEGORY") {
+                    let res = await db.Category.findOne({
+                        where: {
+                            category_id: data.id
+                        },
+                        raw: false
+                    })
+                    if (res) {
+                        res.categoryName = data.value
+                        await res.save();
+                    }
                 }
+
                 resolve({
                     errCode: 0,
                     errMessage: 'ok'
@@ -90,7 +99,7 @@ let handleUpdateAllCode = (data) => {
         }
     })
 }
-let getDetailAllCodeById = (id) => {
+let getDetailAllCodeById = (id, type) => {
     return new Promise(async (resolve, reject) => {
         try {
             if (!id) {
@@ -99,9 +108,13 @@ let getDetailAllCodeById = (id) => {
                     errMessage: 'Missing required parameters !'
                 })
             } else {
-                let data = await db.Allcode.findOne({
-                    where: { id: id }
-                })
+                let data
+                if (type && type === "CATEGORY") {
+                    data = await db.Category.findOne({
+                        where: { category_id: id }
+                    })
+                }
+
                 resolve({
                     errCode: 0,
                     data: data
@@ -112,28 +125,32 @@ let getDetailAllCodeById = (id) => {
         }
     })
 }
-let handleDeleteAllCode = (allcodeId) => {
+let handleDeleteAllCode = (allcodeId, type) => {
     return new Promise(async (resolve, reject) => {
         try {
-
+            console.log("allcodeId", allcodeId, "type", type)
             if (!allcodeId) {
                 resolve({
                     errCode: 1,
                     errMessage: `Missing required parameters !`
                 })
             } else {
-                let foundAllCode = await db.Allcode.findOne({
-                    where: { id: allcodeId }
-                })
-                if (!foundAllCode) {
-                    resolve({
-                        errCode: 2,
-                        errMessage: `The allCode isn't exist`
+                if (type && type === "CATEGORY") {
+                    let foundAllCode = await db.Category.findOne({
+                        where: { category_id: allcodeId }
+                    })
+                    console.log("foundAllCode", foundAllCode)
+                    if (!foundAllCode) {
+                        resolve({
+                            errCode: 2,
+                            errMessage: `The allCode isn't exist`
+                        })
+                    }
+                    await db.Category.destroy({
+                        where: { category_id: allcodeId }
                     })
                 }
-                await db.Allcode.destroy({
-                    where: { id: allcodeId }
-                })
+
                 resolve({
                     errCode: 0,
                     message: `The allCode is deleted`
@@ -145,30 +162,48 @@ let handleDeleteAllCode = (allcodeId) => {
         }
     })
 }
-let getListAllCodeService = (data) => {
+
+//duy
+let getListAllCodeService = (data = {}) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let objectFilter = {
-                where: { type: data.type },
-             
-            }
-            if (data.limit && data.offset) {
-                objectFilter.limit = +data.limit
-                objectFilter.offset = +data.offset
-            }
-            if(data.keyword !=='') objectFilter.where = {...objectFilter.where, value: {[Op.substring]: data.keyword  } }
-                let allcode = await db.Allcode.findAndCountAll(objectFilter)
-                resolve({
+            const { type, limit, offset, keyword } = data;
+            const isCategory = String(type || '').toUpperCase() === 'CATEGORY';
+
+            if (isCategory) {
+                // LẤY DỮ LIỆU TỪ BẢNG CATEGORY
+                const where = {};
+                if (keyword && keyword !== '') {
+                    where.categoryName = { [Op.substring]: keyword };
+                }
+
+                const options = {
+                    where,
+                    order: [['categoryName', 'ASC']],
+                };
+                if (limit != null && offset != null) {
+                    options.limit = +limit;
+                    options.offset = +offset;
+                }
+
+                const res = await db.Category.findAndCountAll(options);
+                return resolve({
                     errCode: 0,
-                    data: allcode.rows,
-                    count: allcode.count
-                })
-         
+                    data: res.rows,
+                    count: res.count,
+                });
+
+            }
+            return resolve({
+                errCode: 0,
+
+            });
         } catch (error) {
-            reject(error)
+            reject(error);
         }
-    })
-}
+    });
+};
+
 let getAllCategoryBlog = (typeInput) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -182,13 +217,13 @@ let getAllCategoryBlog = (typeInput) => {
                 let allcode = await db.Allcode.findAll({
                     where: { type: typeInput }
                 })
-                for(let i = 0 ; i< allcode.length ; i++){
-                    let blog = await db.Blog.findAll({where:{subjectId:allcode[i].code}})
-                    if(blog) 
-                    allcode[i].countPost = blog.length
+                for (let i = 0; i < allcode.length; i++) {
+                    let blog = await db.Blog.findAll({ where: { subjectId: allcode[i].code } })
+                    if (blog)
+                        allcode[i].countPost = blog.length
                 }
-                  
-               
+
+
                 resolve({
                     errCode: 0,
                     data: allcode
@@ -206,5 +241,5 @@ module.exports = {
     getDetailAllCodeById: getDetailAllCodeById,
     handleDeleteAllCode: handleDeleteAllCode,
     getListAllCodeService: getListAllCodeService,
-    getAllCategoryBlog:getAllCategoryBlog
+    getAllCategoryBlog: getAllCategoryBlog
 }

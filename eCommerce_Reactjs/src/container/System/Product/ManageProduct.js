@@ -33,12 +33,13 @@ const ManageProduct = () => {
             sortName: '',
             sortPrice: '',
             categoryId: 'ALL',
-            brandId: 'ALL',
+
             limit: PAGINATION.pagerow,
             offset: 0,
-            keyword:keyword
+            keyword: keyword
 
         })
+        console.log('arrData', arrData)
         if (arrData && arrData.errCode === 0) {
             setdataProduct(arrData.data)
             setCount(Math.ceil(arrData.count / PAGINATION.pagerow))
@@ -57,7 +58,7 @@ const ManageProduct = () => {
                 sortPrice: '',
                 categoryId: 'ALL',
                 brandId: 'ALL',
-                keyword:'',
+                keyword: '',
                 limit: PAGINATION.pagerow,
                 offset: numberPage * PAGINATION.pagerow
 
@@ -91,38 +92,38 @@ const ManageProduct = () => {
             sortPrice: '',
             categoryId: 'ALL',
             brandId: 'ALL',
-            keyword:keyword
+            keyword: keyword
         })
         if (arrData && arrData.errCode === 0) {
             setdataProduct(arrData.data)
 
         }
     }
-    let handleSearchProduct = (keyword) =>{
+    let handleSearchProduct = (keyword) => {
         loadProduct(keyword)
         setkeyword(keyword)
     }
-    let handleOnchangeSearch = (keyword) =>{
-        if(keyword === ''){
+    let handleOnchangeSearch = (keyword) => {
+        if (keyword === '') {
             loadProduct(keyword)
             setkeyword(keyword)
-         }
-        
+        }
+
     }
-    let handleOnClickExport =async () =>{
+    let handleOnClickExport = async () => {
         let res = await getAllProductAdmin({
             sortName: '',
             sortPrice: '',
             categoryId: 'ALL',
             brandId: 'ALL',
-            keyword:'',
+            keyword: '',
             limit: '',
             offset: ''
         })
-        if(res && res.errCode == 0){
-            await CommonUtils.exportExcel(res.data,"Danh sách sản phẩm","ListProduct")
+        if (res && res.errCode == 0) {
+            await CommonUtils.exportExcel(res.data, "Danh sách sản phẩm", "ListProduct")
         }
-       
+
     }
     return (
         <div className="container-fluid px-4">
@@ -135,17 +136,17 @@ const ManageProduct = () => {
                     Danh sách sản phẩm
 
                 </div>
-             
-                   
-              
+
+
+
                 <div className="card-body">
-                  
+
                     <div className='row'>
-                    <div  className='col-4'>
-                    <FormSearch title={"tên sản phẩm"} handleOnchange={handleOnchangeSearch} handleSearch={handleSearchProduct} />                    </div>
-                    <div className='col-8'>
-                    <button  style={{float:'right'}} onClick={() => handleOnClickExport()} className="btn btn-success" >Xuất excel <i class="fa-solid fa-file-excel"></i></button>
-                    </div>
+                        <div className='col-4'>
+                            <FormSearch title={"tên sản phẩm"} handleOnchange={handleOnchangeSearch} handleSearch={handleSearchProduct} />                    </div>
+                        <div className='col-8'>
+                            <button style={{ float: 'right' }} onClick={() => handleOnClickExport()} className="btn btn-success" >Xuất excel <i class="fa-solid fa-file-excel"></i></button>
+                        </div>
                     </div>
                     <div className="table-responsive">
                         <table className="table table-bordered" style={{ border: '1' }} width="100%" cellspacing="0">
@@ -154,10 +155,10 @@ const ManageProduct = () => {
                                     <th>STT</th>
                                     <th>Tên sản phẩm</th>
                                     <th>Danh mục</th>
-                                    <th>Nhãn hàng</th>
+                                    {/* <th>Nhãn hàng</th> */}
                                     <th>Chất liệu</th>
                                     <th>Được làm bởi</th>
-                                    <th>Lượt xem</th>
+                                    {/* <th>Lượt xem</th> */}
                                     <th>Trạng thái</th>
                                     <th>Thao tác</th>
                                 </tr>
@@ -170,20 +171,20 @@ const ManageProduct = () => {
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
                                                 <td>{item.name}</td>
-                                                <td>{item.categoryData.value}</td>
-                                                <td>{item.brandData.value}</td>
+                                                <td>{item?.Category?.categoryName}</td>
+                                                {/* <td>{item.brandData.value}</td> */}
                                                 <td>{item.material}</td>
-                                                <td>{item.madeby}</td>
-                                                <td>{item.view ? item.view : 0}</td>
-                                                <td>{item.statusData.value}</td>
+                                                <td>{item.madeBy}</td>
+                                                {/* <td>{item.view ? item.view : 0}</td> */}
+                                                <td>{item.isActive ? 'Active' : 'Inactive'}</td>
                                                 <td style={{ width: '12%' }}>
                                                     <Link to={`/admin/list-product-detail/${item.id}`}>View</Link>
                                                     &nbsp; &nbsp;
                                                     <Link to={`/admin/edit-product/${item.id}`}>Edit</Link>
                                                     &nbsp; &nbsp;
-                                                    {item.statusData.code === 'S1' ?
-                                                        <span onClick={() => handleBanProduct(item.id)} style={{ color: '#0E6DFE', cursor: 'pointer' }} >Ban</span>
-                                                        : <span onClick={() => handleActiveProduct(item.id)} style={{ color: '#0E6DFE', cursor: 'pointer' }}   >Active</span>
+                                                    {item.isActive === true ?
+                                                        <span onClick={() => handleBanProduct(item.productId)} style={{ color: '#0E6DFE', cursor: 'pointer' }} >Ban</span>
+                                                        : <span onClick={() => handleActiveProduct(item.productId)} style={{ color: '#0E6DFE', cursor: 'pointer' }}   >Active</span>
                                                     }
 
 

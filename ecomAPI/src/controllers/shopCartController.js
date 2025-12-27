@@ -14,6 +14,7 @@ let addShopCart = async (req, res) => {
 }
 let getAllShopCartByUserId = async (req, res) => {
     try {
+        console.log("Fetching cart for user ID:", req.query.id);
         let data = await shopCartService.getAllShopCartByUserId(req.query.id);
         return res.status(200).json(data);
     } catch (error) {

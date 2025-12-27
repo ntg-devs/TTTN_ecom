@@ -1,27 +1,29 @@
 'use strict';
-const {
-    Model
-} = require('sequelize');
-module.exports = (sequelize, DataTypes) => {
-    class Supplier extends Model {
-        /**
-         * Helper method for defining associations.
-         * This method is not a part of Sequelize lifecycle.
-         * The `models/index` file will call this method automatically.
-         */
-        static associate(models) {
-           
+const { Model } = require('sequelize');
 
-        }
-    };
-    Supplier.init({
-        name: DataTypes.STRING,
-        address: DataTypes.STRING,
-        phonenumber:DataTypes.STRING,
-        email:DataTypes.STRING
-    }, {
-        sequelize,
-        modelName: 'Supplier',
-    });
-    return Supplier;
+module.exports = (sequelize, DataTypes) => {
+  class Supplier extends Model {
+    static associate(models) {
+      Supplier.hasMany(models.PurchaseOrder, { foreignKey: 'supplierId' });
+    }
+  }
+
+  Supplier.init({
+    supplierId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true, field: 'supplier_id' },
+    name: { type: DataTypes.STRING, allowNull: false },
+    address: { type: DataTypes.STRING, allowNull: true },
+    email: { type: DataTypes.STRING, allowNull: true },
+    phone: { type: DataTypes.STRING, allowNull: true },
+    createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'created_at' },
+    updatedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'updated_at' }
+  }, {
+    sequelize,
+    modelName: 'Supplier',
+    tableName: 'supplier',
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
+  });
+
+  return Supplier;
 };

@@ -21,18 +21,18 @@ const ManageUser = () => {
     const [count, setCount] = useState('')
     const [numberPage, setnumberPage] = useState('')
     const [keyword, setkeyword] = useState('')
-    
+
     useEffect(() => {
-         fetchAllUser(keyword)
+        fetchAllUser(keyword)
     }, [])
     let fetchAllUser = async (keyword) => {
         let res = await getAllUsers({
             limit: PAGINATION.pagerow,
             offset: 0,
-            keyword:keyword
+            keyword: keyword
         })
         if (res && res.errCode === 0) {
-
+            //console.log("res", res)
             setdataUser(res.data);
             setCount(Math.ceil(res.count / PAGINATION.pagerow))
         }
@@ -46,7 +46,7 @@ const ManageUser = () => {
             let user = await getAllUsers({
                 limit: PAGINATION.pagerow,
                 offset: numberPage * PAGINATION.pagerow,
-                keyword:keyword
+                keyword: keyword
             })
             if (user && user.errCode === 0) {
 
@@ -64,7 +64,7 @@ const ManageUser = () => {
 
             limit: PAGINATION.pagerow,
             offset: number.selected * PAGINATION.pagerow,
-            keyword:keyword
+            keyword: keyword
 
         })
         if (arrData && arrData.errCode === 0) {
@@ -72,26 +72,26 @@ const ManageUser = () => {
 
         }
     }
-    let handleSearchUser = (keyword) =>{
+    let handleSearchUser = (keyword) => {
         fetchAllUser(keyword)
         setkeyword(keyword)
     }
-    let handleOnchangeSearch = (keyword) =>{
-        if(keyword === ''){
+    let handleOnchangeSearch = (keyword) => {
+        if (keyword === '') {
             fetchAllUser(keyword)
             setkeyword(keyword)
         }
     }
-    let handleOnClickExport =async () =>{
+    let handleOnClickExport = async () => {
         let res = await getAllUsers({
             limit: '',
             offset: '',
-            keyword:''
+            keyword: ''
         })
-        if(res && res.errCode == 0){
-            await CommonUtils.exportExcel(res.data,"Danh sách người dùng","ListUser")
+        if (res && res.errCode == 0) {
+            await CommonUtils.exportExcel(res.data, "Danh sách người dùng", "ListUser")
         }
-       
+
     }
     return (
         <div className="container-fluid px-4">
@@ -105,14 +105,14 @@ const ManageUser = () => {
                 </div>
                 <div className="card-body">
                     <div className='row'>
-                    <div  className='col-4'>
-                    <FormSearch title={"số điện thoại"} handleOnchange={handleOnchangeSearch} handleSearch={handleSearchUser} />
+                        <div className='col-4'>
+                            <FormSearch title={"số điện thoại"} handleOnchange={handleOnchangeSearch} handleSearch={handleSearchUser} />
+                        </div>
+                        <div className='col-8'>
+                            <button style={{ float: 'right' }} onClick={() => handleOnClickExport()} className="btn btn-success" >Xuất excel <i class="fa-solid fa-file-excel"></i></button>
+                        </div>
                     </div>
-                    <div className='col-8'>
-                    <button  style={{float:'right'}} onClick={() => handleOnClickExport()} className="btn btn-success" >Xuất excel <i class="fa-solid fa-file-excel"></i></button>
-                    </div>
-                    </div>
-               
+
                     <div className="table-responsive">
                         <table className="table table-bordered" style={{ border: '1' }} width="100%" cellspacing="0">
                             <thead>
@@ -135,14 +135,14 @@ const ManageUser = () => {
                                         return (
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
-                                                <td>{item.email}</td>
-                                                <td>{`${item.firstName} ${item.lastName}`}</td>
-                                                <td>{item.phonenumber}</td>
-                                                <td>{date}</td>
-                                                <td>{item.genderData.value}</td>
-                                                <td>{item.roleData.value}</td>
+                                                <td>{item?.Account?.email}</td>
+                                                <td>{item.fullName}</td>
+                                                <td>{item.phone}</td>
+                                                <td>{item.dateOfBirth}</td>
+                                                <td>{item.gender}</td>
+                                                <td>{item?.Account?.AccountRoles?.Role?.roleName}</td>
                                                 <td>
-                                                    <Link to={`/admin/edit-user/${item.id}`}>Edit</Link>
+                                                    <Link to={`/admin/edit-user/${item.accountId}`}>Edit</Link>
                                                     &nbsp; &nbsp;
                                                     <a href="#" onClick={(event) => handleBanUser(event, item.id)} >Delete</a>
                                                 </td>

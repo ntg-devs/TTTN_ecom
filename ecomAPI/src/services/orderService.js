@@ -21,162 +21,208 @@ paypal.configure({
 import multiProductAttributionService from "./multiProductAttributionService";
 import { getAffiliateAttribution } from "../middlewares/affiliateAttribution";
 
-let createNewOrder = (data) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      console.log(data);
-      if (!data.addressUserId || !data.typeShipId) {
-        resolve({
-          errCode: 1,
-          errMessage: "Missing required parameter !",
+let createNewOrder = async (data) => {
+  // Hàm thay thế để xử lý tham chiếu vòng trong JSON.stringify
+  const getCircularReplacer = () => {
+    const seen = new WeakSet();
+    return (key, value) => {
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) {
+          return "[Circular]";
+        }
+        seen.add(value);
+      }
+      return value;
+    };
+  };
+
+  try {
+    // Ghi log dữ liệu đầu vào một cách an toàn
+    console.log("Input data:", data);
+
+    // Kiểm tra các tham số bắt buộc
+    if (!data.userId || !data.addressUserId || !data.typeShipId || !data.arrDataShopCart || data.arrDataShopCart.length === 0 || !data.isPaymentOnlien) {
+      return {
+        errCode: 1,
+        errMessage: "Thiếu tham số bắt buộc!",
+      };
+    }
+
+    // Kiểm tra payment_method_id tồn tại và đang hoạt động
+    const paymentMethod = await db.PaymentMethod.findOne({
+      where: {
+        paymentMethodId: data.isPaymentOnlien,
+
+      },
+    });
+
+    if (!paymentMethod) {
+      return {
+        errCode: 1,
+        errMessage: `Phương thức thanh toán không hợp lệ: ID ${data.isPaymentOnlien} không tồn tại hoặc không hoạt động!`,
+      };
+    }
+
+    // Tính tổng số tiền từ giỏ hàng
+    const totalAmount = data.totalPrice
+
+    // Chuẩn bị dữ liệu đơn hàng
+    const orderData = {
+      customerId: data.userId,
+      shippingAddressId: data.addressUserId,
+      shippingTypeId: data.typeShipId,
+      voucherId: data.voucherId || null,
+      paymentMethodId: data.isPaymentOnlien,
+      status: 'pending',
+      totalAmount: totalAmount,
+      note: data.note || '',
+    };
+
+    // Tạo đơn hàng chính
+    let order = await db.Orders.create(orderData);
+
+    // Chuẩn bị chi tiết đơn hàng
+    const orderItems = data.arrDataShopCart.map((item) => ({
+      orderId: order.orderId,
+      productSizeId: item.productSize?.productSizeId,
+      quantity: item.quantity,
+      price: item.product?.discountPrice,
+      affiliateLinkId: data.affiliateAttribution?.linkId || null,
+    }));
+
+    // Tạo chi tiết đơn hàng
+    const orderDetails = await db.OrderDetail.bulkCreate(orderItems);
+
+    console.log("orderDetails:", JSON.stringify(orderDetails, getCircularReplacer(), 2));
+
+    // Xử lý phân bổ liên kết (affiliate attribution)
+    const affiliateAttribution = data.affiliateAttribution;
+    if (affiliateAttribution && affiliateAttribution.kolId && affiliateAttribution.linkId) {
+      const attributionResult = await multiProductAttributionService.processOrderAttribution({
+        orderItems: orderItems.map((item, index) => ({
+          ...item,
+          orderDetailId: orderDetails[index].orderDetailId,
+          orderId: order.orderId,
+        })),
+        affiliateAttribution,
+        orderId: order.orderId,
+      });
+
+      if (attributionResult.errCode === 0) {
+        console.log("Xử lý phân bổ đa sản phẩm thành công:", {
+          orderId: order.orderId,
+          totalItems: attributionResult.data.totalItems,
+          attributedItems: attributionResult.data.attributedItems,
+          totalCommissions: attributionResult.data.totalCommissions,
+          kolsInvolved: attributionResult.data.kolsInvolved,
         });
       } else {
-        let product = await db.OrderProduct.create({
-          addressUserId: data.addressUserId,
-          isPaymentOnlien: data.isPaymentOnlien,
-          statusId: "S3",
-          typeShipId: data.typeShipId,
-          voucherId: data.voucherId,
-          note: data.note,
-        });
-
-        // Get affiliate attribution from request
-        const affiliateAttribution =
-          data.affiliateAttribution || getAffiliateAttribution(data.req);
-
-        // Prepare order items for multi-product attribution
-        const orderItems = data.arrDataShopCart.map((item) => ({
-          ...item,
-          orderId: product.dataValues.id,
-        }));
-
-        // Create order details first
-        const orderDetails = await db.OrderDetail.bulkCreate(orderItems);
-
-        console.log("orderDetails", orderDetails);
-
-        // Add orderDetailId to each item for attribution processing
-        const itemsWithDetailIds = orderItems.map((item, index) => ({
-          ...item,
-          orderDetailId: orderDetails[index].id,
-          orderId: product.dataValues.id, // Add main order ID
-        }));
-
-        console.log("affiliateAttribution:", affiliateAttribution);
-
-        // Process multi-product attribution using the new service
-        if (
-          affiliateAttribution &&
-          affiliateAttribution.kolId &&
-          affiliateAttribution.affiliateId
-        ) {
-          const attributionResult =
-            await multiProductAttributionService.processOrderAttribution({
-              orderItems: itemsWithDetailIds,
-              affiliateAttribution,
-              orderId: product.dataValues.id,
-            });
-
-          if (attributionResult.errCode === 0) {
-            console.log("Multi-product attribution processed successfully:", {
-              orderId: product.dataValues.id,
-              totalItems: attributionResult.data.totalItems,
-              attributedItems: attributionResult.data.attributedItems,
-              totalCommissions: attributionResult.data.totalCommissions,
-              kolsInvolved: attributionResult.data.kolsInvolved,
-            });
-          } else {
-            console.error(
-              "Error processing multi-product attribution:",
-              attributionResult.errMessage
-            );
-          }
-        } else {
-          console.log("No valid affiliate attribution data found");
-        }
-
-        let res = await db.ShopCart.findOne({
-          where: { userId: data.userId, statusId: 0 },
-        });
-        if (res) {
-          await db.ShopCart.destroy({
-            where: { userId: data.userId },
-          });
-          for (let i = 0; i < data.arrDataShopCart.length; i++) {
-            let productDetailSize = await db.ProductDetailSize.findOne({
-              where: {
-                id: data.arrDataShopCart[i].productId,
-              },
-              raw: false,
-            });
-            //  productDetailSize.stock = productDetailSize.stock - data.arrDataShopCart[i].quantity
-            await productDetailSize.save();
-          }
-        }
-        if (data.voucherId && data.userId) {
-          let voucherUses = await db.VoucherUsed.findOne({
-            where: {
-              voucherId: data.voucherId,
-              userId: data.userId,
-            },
-            raw: false,
-          });
-          voucherUses.status = 1;
-          await voucherUses.save();
-        }
-        resolve({
-          errCode: 0,
-          errMessage: "ok",
-        });
+        console.error("Lỗi khi xử lý phân bổ đa sản phẩm:", attributionResult.errMessage);
       }
-    } catch (error) {
-      reject(error);
+    } else {
+      console.log("Không tìm thấy dữ liệu phân bổ liên kết hợp lệ");
     }
-  });
+
+    // Xóa giỏ hàng
+    let cart = await db.Cart.findOne({
+      where: { customerId: data.userId },
+    });
+    if (cart) {
+      await db.CartItem.destroy({
+        where: { cartId: cart.cartId },
+      });
+      for (let item of data.arrDataShopCart) {
+        let productDetailSize = await db.ProductSize.findOne({
+          where: { productSizeId: item?.productSize?.productSizeId },
+          raw: false,
+        });
+        if (productDetailSize) {
+          productDetailSize.stock -= item.quantity;
+          await productDetailSize.save();
+        }
+      }
+    }
+
+    // Cập nhật trạng thái voucher
+    // if (data.voucherId && data.userId) {
+    //   let voucherUsed = await db.VoucherUsed.findOne({
+    //     where: { voucherId: data.voucherId, userId: data.userId },
+    //     raw: false,
+    //   });
+    //   if (voucherUsed) {
+    //     voucherUsed.status = 1;
+    //     await voucherUsed.save();
+    //   }
+    // }
+
+    return {
+      errCode: 0,
+      errMessage: "ok",
+    };
+  } catch (error) {
+    console.error("Lỗi khi tạo đơn hàng:", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      sql: error.sql || 'N/A',
+      parameters: error.parameters || 'N/A',
+    });
+    throw error;
+  }
 };
 let getAllOrders = (data) => {
   return new Promise(async (resolve, reject) => {
     try {
-      let objectFilter = {
+      const objectFilter = {
         include: [
-          { model: db.TypeShip, as: "typeShipData" },
-          { model: db.Voucher, as: "voucherData" },
-          { model: db.Allcode, as: "statusOrderData" },
+          { model: db.Customer },                // khách hàng
+          { model: db.ShippingAddress },         // địa chỉ giao hàng
+          { model: db.Voucher },                 // voucher (có thể null)
+          {                                       // chi tiết đơn hàng
+            model: db.OrderDetail,
+            include: [
+              { model: db.ProductSize },         // kích cỡ/sản phẩm (nếu cần sâu hơn, bổ sung association khác)
+              { model: db.AffiliateLink }        // link affiliate (có thể null)
+            ]
+          }
         ],
-        order: [["createdAt", "DESC"]],
-        raw: true,
-        nest: true,
+        order: [['createdAt', 'DESC']],
+        distinct: true,  // rất quan trọng khi có hasMany để count chính xác
+        raw: false,
       };
-      if (data.limit && data.offset) {
+
+      // phân trang
+      if (data.limit != null && data.offset != null) {
         objectFilter.limit = +data.limit;
         objectFilter.offset = +data.offset;
       }
-      if (data.statusId && data.statusId !== "ALL")
-        objectFilter.where = { statusId: data.statusId };
-      let res = await db.OrderProduct.findAndCountAll(objectFilter);
-      for (let i = 0; i < res.rows.length; i++) {
-        let addressUser = await db.AddressUser.findOne({
-          where: { id: res.rows[i].addressUserId },
-        });
-        let shipper = await db.User.findOne({
-          where: { id: res.rows[i].shipperId },
-        });
 
-        if (addressUser) {
-          let user = await db.User.findOne({
-            where: {
-              id: addressUser.userId,
-            },
-          });
-
-          res.rows[i].userData = user;
-          res.rows[i].addressUser = addressUser;
-          res.rows[i].shipperData = shipper;
-        }
+      // lọc theo trạng thái (schema mới: cột 'status' dạng string)
+      if (data.status && data.status !== 'ALL') {
+        objectFilter.where = { ...(objectFilter.where || {}), status: data.status };
       }
+
+      // (tuỳ chọn) lọc theo customerId nếu cần
+      if (data.customerId) {
+        objectFilter.where = { ...(objectFilter.where || {}), customerId: +data.customerId };
+      }
+
+      // (tuỳ chọn) lọc theo khoảng thời gian
+      if (data.fromDate && data.toDate) {
+        objectFilter.where = {
+          ...(objectFilter.where || {}),
+          orderDate: { [Op.between]: [new Date(data.fromDate), new Date(data.toDate)] },
+        };
+      }
+
+      const res = await db.Orders.findAndCountAll(objectFilter);
+
+      // Trả về JSON thuần
+      const rows = res.rows.map(r => r.toJSON());
+
       resolve({
         errCode: 0,
-        data: res.rows,
+        data: rows,
         count: res.count,
       });
     } catch (error) {

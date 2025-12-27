@@ -66,76 +66,155 @@ let createNewReceiptDetail = (data) => {
         }
     })
 }
+//
 let getDetailReceiptById = (id) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!id) {
-                resolve({
+            // 1. Lấy purchase order
+            const purchaseOrder = await db.PurchaseOrder.findOne({
+                where: { purchaseOrderId: id },
+                raw: true,
+            });
+
+            if (!purchaseOrder) {
+                return resolve({
                     errCode: 1,
-                    errMessage: 'Missing required parameter !'
-                })
-            } else {
+                    errMessage: "Purchase order not found"
+                });
+            }
 
-                let res = await db.Receipt.findOne({
-                    where: { id: id }
+            // 2. Lấy supplier
+            const supplier = await db.Supplier.findByPk(purchaseOrder.supplierId, {
+                attributes: ['supplierId', 'name', 'address', 'email', 'phone'],
+                raw: true,
+            });
 
-                })
-                res.receiptDetail = await db.ReceiptDetail.findAll({ where: { receiptId: id } })
-                if (res.receiptDetail && res.receiptDetail.length > 0) {
-                    for (let i = 0; i < res.receiptDetail.length; i++) {
+            // 3. Lấy employee
+            const employee = await db.Employee.findByPk(purchaseOrder.employeeId, {
+                attributes: ['employeeId', 'fullName', 'phone'],
+                raw: true,
+            });
 
-                        let productDetailSize = await db.ProductDetailSize.findOne({
-                            where: { id: res.receiptDetail[i].productDetailSizeId },
-                            include: [
-                                { model: db.Allcode, as: 'sizeData', attributes: ['value', 'code'] },
+            // 4. Lấy chi tiết order
+            const details = await db.PurchaseOrderDetail.findAll({
+                where: { purchaseOrderId: id },
+                attributes: ['purchaseOrderDetailId', 'quantity', 'price', 'productSizeId'], // ✅ phải có productSizeId
+                raw: true,
+            });
 
-                            ],
-                            raw: true,
-                            nest: true
-                        })
-                        res.receiptDetail[i].productDetailSizeData = productDetailSize
-                        res.receiptDetail[i].productDetailData = await db.ProductDetail.findOne({ where: { id: productDetailSize.productdetailId } })
-                        res.receiptDetail[i].productData = await db.Product.findOne({ where: { id: res.receiptDetail[i].productDetailData.productId } })
+            // 5. Với mỗi detail → lấy productSize, product, size
+            const detailWithProducts = [];
+            for (const d of details) {
+                const productSize = await db.ProductSize.findByPk(d.productSizeId, {
+                    attributes: ['productSizeId', 'stock', 'productId', 'sizeId'], // ✅ lấy cả productId, sizeId
+                    raw: true,
+                });
 
-                    }
+                let product = null;
+                let size = null;
+
+                if (productSize) {
+                    product = await db.Product.findByPk(productSize.productId, {
+                        attributes: ['productId', 'name', 'description', 'originalPrice', 'discountPrice', 'isActive'],
+                        raw: true,
+                    });
+
+                    size = await db.Size.findByPk(productSize.sizeId, {
+                        attributes: ['sizeId', 'name'],
+                        raw: true,
+                    });
                 }
 
-
-                resolve({
-                    errCode: 0,
-                    data: res
-                })
+                detailWithProducts.push({
+                    ...d,
+                    productSize,
+                    product,
+                    size,
+                });
             }
+
+            // 6. Build object kết
+            const result = {
+                ...purchaseOrder,
+                supplier,
+                employee,
+                details: detailWithProducts,
+            };
+
+            resolve({
+                errCode: 0,
+                data: result,
+            });
         } catch (error) {
-            reject(error)
+            console.error(error);
+            reject(error);
         }
-    })
-}
+    });
+};
+
 let getAllReceipt = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let objectFilter = {}
+            const objectFilter = {
+                // có thể thêm where nếu cần lọc theo ngày / nhà cung cấp...
+                include: [
+                    {
+                        model: db.Supplier,
+                        attributes: ['name', 'phone'],
+                    },
+                    {
+                        model: db.Employee,
+                        attributes: ['employeeId', 'fullName', 'phone'],
+                    },
+                    {
+                        model: db.PurchaseOrderDetail,
+                        attributes: [
+                            'purchaseOrderDetailId',
+                            'productSizeId',
+                            'quantity',
+                            'price',
+                        ],
+                        include: [
+                            {
+                                model: db.ProductSize, // nếu muốn biết size/product
+                                attributes: ['productSizeId', 'productId'],
+                            },
+                        ],
+                    },
+                ],
+                order: [['orderDate', 'DESC']],
+                distinct: true, // để count đúng khi có include
+                raw: false,
+            };
+
+            // phân trang
             if (data.limit && data.offset) {
-                objectFilter.limit = +data.limit
-                objectFilter.offset = +data.offset
+                objectFilter.limit = +data.limit;
+                objectFilter.offset = +data.offset;
             }
 
-            //  if(data.keyword !=='') objectFilter.where = {...objectFilter.where, name: {[Op.substring]: data.keyword  } }
-            let res = await db.Receipt.findAndCountAll(objectFilter)
-            for (let i = 0; i < res.rows.length; i++) {
-                res.rows[i].userData = await db.User.findOne({ where: { id: res.rows[i].userId } })
-                res.rows[i].supplierData = await db.Supplier.findOne({ where: { id: res.rows[i].supplierId } })
+            // ví dụ: lọc theo khoảng ngày nếu FE truyền fromDate/toDate (ISO string)
+            if (data.fromDate && data.toDate) {
+                objectFilter.where = {
+                    ...(objectFilter.where || {}),
+                    orderDate: {
+                        [Op.between]: [new Date(data.fromDate), new Date(data.toDate)],
+                    },
+                };
             }
+
+            const res = await db.PurchaseOrder.findAndCountAll(objectFilter);
+
             resolve({
                 errCode: 0,
-                data: res.rows,
-                count: res.count
-            })
+                data: res.rows,   // đã có Supplier, Employee, PurchaseOrderDetail trong từng row
+                count: res.count,
+            });
         } catch (error) {
-            reject(error)
+            reject(error);
         }
-    })
-}
+    });
+};
 let updateReceipt = (data) => {
     return new Promise(async (resolve, reject) => {
         try {

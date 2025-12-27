@@ -6,7 +6,7 @@ const { Op } = require("sequelize");
 let createNewSupplier = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!data.name || !data.address || !data.phonenumber || !data.email) {
+            if (!data.name || !data.address || !data.phone || !data.email) {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing required parameter !'
@@ -15,7 +15,7 @@ let createNewSupplier = (data) => {
                 await db.Supplier.create({
                     name: data.name,
                     address: data.address,
-                    phonenumber: data.phonenumber,
+                    phone: data.phone,
                     email: data.email,
                 })
                 resolve({
@@ -39,7 +39,7 @@ let getDetailSupplierById = (id) => {
             } else {
                
                 let res = await db.Supplier.findOne({
-                    where: { id: id }
+                    where: { supplierId: id }
                   
                 })
               
@@ -77,20 +77,20 @@ let getAllSupplier = (data) => {
 let updateSupplier = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!data.id ||!data.name || !data.address || !data.phonenumber || !data.email) {
+            if (!data.id ||!data.name || !data.address || !data.phone || !data.email) {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing required parameter !'
                 })
-            } else {
+            } else {    
                 let supplier = await db.Supplier.findOne({
-                    where: { id: data.id },
+                    where: { supplierId: data.id },
                     raw: false
                 })
                 if (supplier) {
                     supplier.name = data.name;
                     supplier.address = data.address;
-                    supplier.phonenumber = data.phonenumber;
+                    supplier.phone = data.phone;
                     supplier.email = data.email;
                   
 
@@ -117,11 +117,11 @@ let deleteSupplier = (data) => {
                 })
             } else {
                 let supplier = await db.Supplier.findOne({
-                    where: { id: data.id }
+                    where: { supplierId: data.id }
                 })
                 if (supplier) {
                     await db.Supplier.destroy({
-                        where: { id: data.id }
+                        where: { supplierId: data.id }
                     })
                     resolve({
                         errCode: 0,

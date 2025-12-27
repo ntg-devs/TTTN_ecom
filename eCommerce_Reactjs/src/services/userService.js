@@ -64,18 +64,19 @@ const createAllCodeService = (data) => {
 
 }
 
-const getDetailAllcodeById = (id) => {
-    return axios.get(`/api/get-detail-all-code-by-id?id=${id}`)
+const getDetailAllcodeById = (id, type) => {
+    return axios.get(`/api/get-detail-all-code-by-id?id=${id}&type=${type}`)
 
 }
 const UpdateAllcodeService = (data) => {
     return axios.put(`/api/update-all-code`, data)
 
 }
-const DeleteAllcodeService = (allcodeId) => {
+const DeleteAllcodeService = (allcodeId, type) => {
     return axios.delete(`/api/delete-all-code`, {
         data: {
-            id: allcodeId
+            id: allcodeId,
+            type: type
         }
     })
 }

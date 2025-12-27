@@ -17,7 +17,7 @@ const AddSupplier = (props) => {
     const { id } = useParams();
 
     const [inputValues, setInputValues] = useState({
-        name: '', address: '',phonenumber: '',email: ''
+        name: '', address: '',phone: '',email: ''
     });
     useEffect(() => {
 
@@ -29,7 +29,7 @@ const AddSupplier = (props) => {
                     setInputValues({ ...inputValues, 
                         ["name"]: supplier.data.name, 
                         ["address"]: supplier.data.address,
-                        ["phonenumber"]: supplier.data.phonenumber,
+                        ["phone"]: supplier.data.phone,
                         ["email"]: supplier.data.email
                     })
                 }
@@ -49,7 +49,7 @@ const AddSupplier = (props) => {
                 name: inputValues.name,
                 address: inputValues.address,
                 email: inputValues.email,
-                phonenumber: inputValues.phonenumber,
+                phone: inputValues.phone,
             })
             if (res && res.errCode === 0) {
                 toast.success("Thêm nhà cung cấp thành công")
@@ -58,7 +58,7 @@ const AddSupplier = (props) => {
                     ["name"]: '',
                     ["address"]: '',
                     ["email"]: '',
-                    ["phonenumber"]: ''
+                    ["phone"]: ''
                 })
             }
             else if (res && res.errCode === 2) {
@@ -70,7 +70,7 @@ const AddSupplier = (props) => {
                 name: inputValues.name,
                 address: inputValues.address,
                 email: inputValues.email,
-                phonenumber: inputValues.phonenumber,
+                phone: inputValues.phone,
                 id: id
             })
             if (res && res.errCode === 0) {
@@ -112,7 +112,7 @@ const AddSupplier = (props) => {
                             </div>
                             <div className="form-group col-md-6">
                                 <label htmlFor="inputPassword4">Số điện thoại</label>
-                                <input type="text" value={inputValues.phonenumber} name="phonenumber" onChange={(event) => handleOnChange(event)} className="form-control" id="inputPassword4" />
+                                <input type="text" value={inputValues.phone} name="phone" onChange={(event) => handleOnChange(event)} className="form-control" id="inputPassword4" />
                             </div>
                         </div>
                         <button type="button" onClick={() => handleSaveSupplier()} className="btn btn-primary">Lưu thông tin</button>

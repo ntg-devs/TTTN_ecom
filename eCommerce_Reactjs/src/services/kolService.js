@@ -8,7 +8,8 @@ import axios from "../axios";
  * @returns {Promise<Object>} - Response object
  */
 const registerKol = (data) => {
-    return axios.post(`/api/kol/register`, data);
+
+  return axios.post(`/api/kol/register`, data);
 };
 
 /**
@@ -16,7 +17,7 @@ const registerKol = (data) => {
  * @returns {Promise<Object>} - Response object with status information
  */
 const getKolStatus = () => {
-    return axios.get(`/api/kol/status`);
+  return axios.get(`/api/kol/status`);
 };
 
 /**
@@ -24,7 +25,7 @@ const getKolStatus = () => {
  * @returns {Promise<Object>} - Response object with KOL profile data
  */
 const getKolProfile = () => {
-    return axios.get(`/api/kol/profile`);
+  return axios.get(`/api/kol/profile`);
 };
 
 /**
@@ -33,7 +34,7 @@ const getKolProfile = () => {
  * @returns {Promise<Object>} - Response object
  */
 const updateKolProfile = (data) => {
-    return axios.put(`/api/kol/profile`, data);
+  return axios.put(`/api/kol/profile`, data);
 };
 
 const updateKolBankInfo = (data) => {
@@ -54,13 +55,13 @@ const handleGetAllRequestDrawByKOL = (data) => {
 
 
 export {
-    registerKol,
-    getKolStatus,
-    getKolProfile,
-    updateKolProfile,
-    updateKolBankInfo,
-    getKolBankInfo,
-    handleWithCreateDrawMoneyKOL,
-    handleGetAllDrawKOL,
-    handleGetAllRequestDrawByKOL
+  registerKol,
+  getKolStatus,
+  getKolProfile,
+  updateKolProfile,
+  updateKolBankInfo,
+  getKolBankInfo,
+  handleWithCreateDrawMoneyKOL,
+  handleGetAllDrawKOL,
+  handleGetAllRequestDrawByKOL
 };

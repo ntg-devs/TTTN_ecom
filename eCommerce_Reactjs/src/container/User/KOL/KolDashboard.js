@@ -52,11 +52,11 @@ const KolDashboard = () => {
 
   // Fetch KOL status on component mount
   useEffect(() => {
-    fetchDashboardData();
+    //fetchDashboardData();
     const fetchKolStatus = async () => {
       try {
-        const response = await getKolStatus();
-        setKolStatus(response.data);
+        // const response = await getKolStatus();
+        // setKolStatus(response.data);
       } catch (error) {
         console.error("Lỗi khi tải trạng thái KOL:", error);
       } finally {
@@ -65,7 +65,7 @@ const KolDashboard = () => {
     };
 
     if (isLoggedIn()) {
-      fetchKolStatus();
+      //fetchKolStatus();
     } else {
       setLoading(false);
     }
@@ -119,9 +119,8 @@ const KolDashboard = () => {
               <ul className="nav nav-tabs">
                 <li className="nav-item">
                   <button
-                    className={`nav-link ${
-                      activeTab === "products" ? "active" : ""
-                    }`}
+                    className={`nav-link ${activeTab === "products" ? "active" : ""
+                      }`}
                     onClick={() => setActiveTab("products")}
                   >
                     Danh mục sản phẩm
@@ -129,9 +128,8 @@ const KolDashboard = () => {
                 </li>
                 <li className="nav-item">
                   <button
-                    className={`nav-link ${
-                      activeTab === "links" ? "active" : ""
-                    }`}
+                    className={`nav-link ${activeTab === "links" ? "active" : ""
+                      }`}
                     onClick={() => setActiveTab("links")}
                   >
                     Tạo liên kết
@@ -139,9 +137,8 @@ const KolDashboard = () => {
                 </li>
                 <li className="nav-item">
                   <button
-                    className={`nav-link ${
-                      activeTab === "performance" ? "active" : ""
-                    }`}
+                    className={`nav-link ${activeTab === "performance" ? "active" : ""
+                      }`}
                     onClick={() => setActiveTab("performance")}
                   >
                     Hiệu suất
@@ -149,9 +146,8 @@ const KolDashboard = () => {
                 </li>
                 <li className="nav-item">
                   <button
-                    className={`nav-link ${
-                      activeTab === "charts" ? "active" : ""
-                    }`}
+                    className={`nav-link ${activeTab === "charts" ? "active" : ""
+                      }`}
                     onClick={() => setActiveTab("charts")}
                   >
                     Biểu đồ thống kê
@@ -159,9 +155,8 @@ const KolDashboard = () => {
                 </li>
                 <li className="nav-item">
                   <button
-                    className={`nav-link ${
-                      activeTab === "payment" ? "active" : ""
-                    }`}
+                    className={`nav-link ${activeTab === "payment" ? "active" : ""
+                      }`}
                     onClick={() => setActiveTab("payment")}
                   >
                     Rút tiền
@@ -182,11 +177,11 @@ const KolDashboard = () => {
                 <LinkGenerator selectedProduct={selectedProduct} />
               )}
               {activeTab === "performance" && <PerformanceDashboard />}
-              {activeTab === "charts" && 
+              {activeTab === "charts" &&
                 <DashboardCharts dashboardData={dashboardData} />
               }
-              {activeTab === "payment" && 
-                <Payment  />
+              {activeTab === "payment" &&
+                <Payment />
               }
             </div>
           </div>
